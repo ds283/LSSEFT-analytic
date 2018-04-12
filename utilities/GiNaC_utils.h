@@ -38,6 +38,7 @@ namespace std
     
     //! specialize std::less for a GiNaC symbol, defined to
     //! order lexically by name
+    //! (GiNaC does not supply a functional to do this, only GiNaC::ex_is_less which is not the same)
     template <>
     struct less<GiNaC::symbol>
       {
@@ -55,7 +56,7 @@ class service_locator;
 
 
 //! set of GiNaC symbols, with comparison performed lexicographically by name
-//! (GiNaC does not provide this option itself)
+//! (GiNaC does not provide this option itself; only GiNaC::ex_is_less which is not the same)
 using GiNaC_symbol_set = std::set< GiNaC::symbol, std::less<GiNaC::symbol> >;
 
 

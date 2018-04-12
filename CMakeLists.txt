@@ -39,6 +39,7 @@ ADD_EXECUTABLE(LSSEFT_analytic
   instruments/timing_instrument.cpp
   lib/fourier_kernel.cpp
   lib/initial_value.cpp
+  lib/Rayleigh_db.cpp
   lib/vector.cpp
   lib/expressions/tree_expression.cpp
   lib/expressions/oneloop_expression.cpp
@@ -98,6 +99,8 @@ SET(LIBRARY_FILES
   lib/vector.h
   lib/initial_value.cpp
   lib/initial_value.h
+  lib/Rayleigh_db.cpp
+  lib/Rayleigh_db.h
   )
 
 SET(LIBRARY_CORRELATORS_FILES

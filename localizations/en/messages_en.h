@@ -101,7 +101,6 @@ constexpr auto EXPECTED_EXPONENT_TO_BE_INTEGER = "Expected exponent to be intege
 constexpr auto EXPECTED_EXPONENT_TO_BE_EVEN_INTEGER = "Expected exponent to be even integer during loop transformation";
 constexpr auto ERROR_CANT_MATCH_NEGATIVE_INDEXED_POWER_TO_RAYLEIGH = "Can't match base of negative indexed power to a Rayleigh momentum";
 constexpr auto ERROR_INCONSISTENT_INDEXED_SUM = "Inconsistent indices on sum";
-constexpr auto ERROR_RAYLEIGH_MOMENTA_POSITIVE_POWER = "Expected Rayleigh momentum to appear with negative power";
 
 constexpr auto ERROR_COULDNT_COLLECT_COS = "Could not collect cosine terms for transformation to Legendre representation";
 constexpr auto ERROR_LEGENDRE_TRANSFORM_UNEXPECTED_SIZE = "Internal error: result matrix has unexpected dimensions during conversion to Legendre representation";
@@ -115,6 +114,7 @@ constexpr auto ERROR_ONELOOP_REDUCE_WITH_MULTIPLE_LOOPS = "Internal error: one-l
 constexpr auto ERROR_BADLY_FORMED_TOP_LEVEL_LEGENDRE_SUM = "Badly formed Legendre representations";
 constexpr auto ERROR_BADLY_FORMED_LEGENDRE_SUM_TERM = "Badly formed term in Legendre representation";
 constexpr auto ERROR_CANT_INTEGRATE_MORE_THAN_TWO_LEGP = "Cannot integrate products of more than two Legendre polynomials";
+
 constexpr auto ERROR_NO_LOOPQ_IN_RAYLEIGH = "Loop momentum does not appear in expression for Rayleigh momentum";
 constexpr auto ERROR_DEGREE_OF_LOOPQ_IN_RAYLEIGH_TOO_LARGE = "Loop momentum appears non-linearly in Rayleigh momentum";
 constexpr auto ERROR_NO_KEXT_IN_RAYLEIGH = "No external momentum appears in expression for Rayleigh momentum";
@@ -123,6 +123,11 @@ constexpr auto ERROR_TOO_MANY_KEXT_IN_RAYLEIGH = "Too many external momenta appe
 constexpr auto ERROR_LOOPQ_HAS_WRONG_COEFF_IN_RAYLEIGH = "Loop momentum appears with incorrect coefficient in Rayleigh momentum";
 constexpr auto ERROR_KEXT_HAS_WRONG_COEFF_IN_RAYLEIGH = "External momentum appears with incorrect coefficient in Rayleigh momentum";
 constexpr auto ERROR_KERNEL_DEPENDS_ON_ANGULAR_RAYLEIGH_MOMENTUM = "Momentum kernel depends on angular part of Rayleigh momentum";
+
+constexpr auto ERROR_RAYLEIGH_MOMENTA_POSITIVE_POWER = "Expected Rayleigh momentum to appear with negative power";
+constexpr auto ERROR_RAYLEIGH_DATABASE_KEY_ALREADY_PRESENT = "Attempt to insert Rayleigh rule for already-existing momentum label";
+constexpr auto ERROR_RAYLEIGH_DATABASE_INSERT_FAILED = "Internal error: Rayleigh database insertion failed for rule";
+
 constexpr auto ERROR_TOO_MANY_KEXT_IN_LEGENDRE_SUM = "Too many Legendre polynomials involving loop momentum and external momentum";
 constexpr auto ERROR_FAILED_TO_REDUCE_TRIPLE_PRODUCT_LEGP = "Failed to reduce a triple product of Legendre polynomials";
 constexpr auto ERROR_CANNOT_ADD_KERNELS_WITH_UNEQUAL_TIME_FUNCTIONS = "Cannot add momentum kernels with differing time functions";
