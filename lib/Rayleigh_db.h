@@ -30,6 +30,7 @@
 
 #include <map>
 #include <vector>
+#include <set>
 
 #include "utilities/GiNaC_utils.h"
 
@@ -64,8 +65,11 @@ class Rayleigh_db
 
   public:
 
-    //! constructor is default
-    Rayleigh_db() = default;
+    //! constructor captures reference to a service locator
+    Rayleigh_db(service_locator& _loc)
+      : loc(_loc)
+      {
+      }
 
     //! destructor is default
     ~Rayleigh_db() = default;
@@ -140,6 +144,30 @@ class Rayleigh_db
     //! rules that are not used in the reference expression are removed from the database
     void prune(const GiNaC::ex& ref);
 
+    //! prune the database by extracting all 'trivial' rules, defined to be maps s0 -> q0 from a
+    //! Rayleigh label s0 to a single symbol (or a multiple of a single symbol)
+    //! and which therefore don't need to be Rayleigh-expanded.
+    //! Removes trivial rules and returns an exmap containing corresponding replacement rules
+    GiNaC::exmap prune_trivial();
+
+    //! merge another Rayleigh_db with this one, optionally applying a set of substitutions in 'subs_rules'
+    //! to the right-hand side of the rules before merging.
+    //! returns a GiNaC::exmap which performs any relabelling needed for the expression kernel
+    //! associated with the datbase we are merging. A list of symbols that should not be
+    //! used during relabelling is supplied in 'reserved'.
+    //! Constraints are merged by default but this behaviour can optionally be disabled.
+    GiNaC::exmap merge(const Rayleigh_db& source, const GiNaC_symbol_set& reserved, const GiNaC::exmap& subs_rules,
+                       bool merge_constraints=true);
+
+    //! same as merge(), but update the set of reserved symbols with symbols from both the source database and
+    //! ourselves. This means that future merges won't generate ambiguous symbols that could be confused
+    //! with symbols involved in early merges.
+    GiNaC::exmap merge_and_update_reserved(const Rayleigh_db& source, const GiNaC_symbol_set& reserved,
+                                           const GiNaC::exmap& subs_rules, bool merge_constraints=true);
+
+    //! get ordered set of Rayleigh momenta
+    GiNaC_symbol_set get_Rayleigh_labels() const;
+
   protected:
 
     //! test whether a given expression is zero modulo the constraints
@@ -149,6 +177,14 @@ class Rayleigh_db
     // INTERNAL DATA
 
   private:
+
+    // SERVICES
+
+    //! capture reference to service locator
+    service_locator& loc;
+
+
+    // DATABASES
 
     //! main database
     db_type db;
