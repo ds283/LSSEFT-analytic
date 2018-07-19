@@ -27,6 +27,7 @@
 #include "GiNaC_utils.h"
 
 #include "services/service_locator.h"
+#include "lib/Rayleigh_db.h"
 
 #include "shared/exceptions.h"
 #include "localizations/messages.h"
@@ -107,15 +108,18 @@ GiNaC_symbol_set get_expr_indices(const GiNaC::ex& expr, size_t min_occurrences)
 
 
 // forward declare main simplify_index implementation method
-GiNaC::ex simplify_index_impl(const GiNaC::ex& expr, const GiNaC::scalar_products& sp, const GiNaC::exmap& Rayleigh_list,
-                              service_locator& loc);
+GiNaC::ex
+simplify_index_impl(const GiNaC::ex& expr, const GiNaC::scalar_products& sp, const Rayleigh_db& Rayleigh_list,
+                    service_locator& loc);
 
 
-GiNaC::ex simplify_add(const GiNaC::ex& expr, const GiNaC::scalar_products& sp, const GiNaC::exmap& Rayleigh_list,
-                       service_locator& loc)
+GiNaC::ex
+simplify_add(const GiNaC::ex& expr, const GiNaC::scalar_products& sp, const Rayleigh_db& Rayleigh_list,
+             service_locator& loc)
   {
     GiNaC::ex val{0};
-    
+
+    // rebuild sum from simplified terms
     for(auto t = expr.begin(); t != expr.end(); ++t)
       {
         val += simplify_index_impl(*t, sp, Rayleigh_list, loc);
@@ -126,8 +130,9 @@ GiNaC::ex simplify_add(const GiNaC::ex& expr, const GiNaC::scalar_products& sp, 
   }
 
 
-std::pair<bool, GiNaC::ex> try_match(const GiNaC::ex& expr, const GiNaC::ex& LHS_search, GiNaC::exmap& LHS_data,
-const GiNaC::ex& RHS_search, GiNaC::exmap& RHS_data)
+std::pair<bool, GiNaC::ex>
+try_match(const GiNaC::ex& expr, const GiNaC::ex& LHS_search, GiNaC::exmap& LHS_data,
+          const GiNaC::ex& RHS_search, GiNaC::exmap& RHS_data)
   {
     bool found_LHS = false;
     bool found_RHS = false;
@@ -157,16 +162,16 @@ const GiNaC::ex& RHS_search, GiNaC::exmap& RHS_data)
   };
 
 
-GiNaC::ex simplify_mul(const GiNaC::ex& expr, const GiNaC::scalar_products& sp, const GiNaC::exmap& Rayleigh_list,
-                       service_locator& loc)
+GiNaC::ex
+simplify_mul(const GiNaC::ex& expr, const GiNaC::scalar_products& sp, const Rayleigh_db& Rayleigh_list,
+             service_locator& loc)
   {
     GiNaC::ex val{1};
-    
+
+    // rebuild product from simplified factors
     for(auto t = expr.begin(); t != expr.end(); ++t)
       {
-        auto factor = simplify_index_impl(*t, sp, Rayleigh_list, loc);
-
-        val *= factor;
+        val *= simplify_index_impl(*t, sp, Rayleigh_list, loc);
       }
 
     // try to simplify powers of Rayleigh momenta that also occur in the numerator
@@ -219,8 +224,9 @@ GiNaC::ex simplify_mul(const GiNaC::ex& expr, const GiNaC::scalar_products& sp, 
   }
 
 
-GiNaC::ex simplify_pow_impl(const GiNaC::ex& base_kernel, const GiNaC::idx& base_idx, const GiNaC::ex& exponent,
-                            const GiNaC::scalar_products& sp, const GiNaC::exmap& Rayleigh_list, service_locator& loc)
+GiNaC::ex
+simplify_pow_impl(const GiNaC::ex& base_kernel, const GiNaC::idx& base_idx, const GiNaC::ex& exponent,
+                  const GiNaC::scalar_products& sp, const Rayleigh_db& Rayleigh_list, service_locator& loc)
   {
     auto base = GiNaC::indexed(base_kernel, base_idx);
 
@@ -279,8 +285,9 @@ GiNaC::ex simplify_pow_impl(const GiNaC::ex& base_kernel, const GiNaC::idx& base
   }
 
 
-GiNaC::ex simplify_pow(const GiNaC::ex& expr, const GiNaC::scalar_products& sp, const GiNaC::exmap& Rayleigh_list,
-                       service_locator& loc)
+GiNaC::ex
+simplify_pow(const GiNaC::ex& expr, const GiNaC::scalar_products& sp, const Rayleigh_db& Rayleigh_list,
+             service_locator& loc)
   {
     const GiNaC::ex& base = expr.op(0);
     const GiNaC::ex& exponent = expr.op(1);
@@ -381,8 +388,9 @@ GiNaC::ex simplify_pow(const GiNaC::ex& expr, const GiNaC::scalar_products& sp, 
   }
 
 
-GiNaC::ex simplify_index_impl(const GiNaC::ex& expr, const GiNaC::scalar_products& sp, const GiNaC::exmap& Rayleigh_list,
-                              service_locator& loc)
+GiNaC::ex
+simplify_index_impl(const GiNaC::ex& expr, const GiNaC::scalar_products& sp, const Rayleigh_db& Rayleigh_list,
+                    service_locator& loc)
   {
     if(GiNaC::is_exactly_a<GiNaC::add>(expr))
       {
@@ -402,29 +410,23 @@ GiNaC::ex simplify_index_impl(const GiNaC::ex& expr, const GiNaC::scalar_product
   }
 
 
-GiNaC::ex simplify_index(const GiNaC::ex& expr, const GiNaC::scalar_products& sp, const GiNaC::exmap& Rayleigh_list,
+GiNaC::ex simplify_index(const GiNaC::ex& expr, const GiNaC::scalar_products& sp, const Rayleigh_db& Rayleigh_list,
                          service_locator& loc)
   {
-    // filter out any zero elements from Rayleigh list
-    GiNaC::exmap new_Rayleigh_list;
-    for(const auto& rule : Rayleigh_list)
-      {
-        const auto& LHS = rule.first;
-        const auto& RHS = rule.second;
-
-        if(!static_cast<bool>(RHS == 0)) new_Rayleigh_list[LHS] = RHS;
-        else                             new_Rayleigh_list[LHS] = LHS;  // insert identity map
-      }
-
+    // use GiNaC's built-in index simplifier to perform basic transformations
     auto expr_mod = GiNaC::simplify_indexed(expr.expand(GiNaC::expand_options::expand_indexed), sp);
 
-    auto result = simplify_index_impl(expr_mod, sp, new_Rayleigh_list, loc);
+    // run the result through our own simplification algorithm, which additionally tries to match
+    // any denominators to Rayleigh momenta
+    auto result = simplify_index_impl(expr_mod, sp, Rayleigh_list, loc);
 
+    // re-run the built-in simplifier as a second opportunity to pick up simplifications made available
+    // by our transformations
     return GiNaC::simplify_indexed(result.expand(GiNaC::expand_options::expand_indexed), sp);
   }
 
 
-GiNaC::ex simplify_index(const GiNaC::ex& expr, const GiNaC::exmap& Rayleigh_list, service_locator& loc)
+GiNaC::ex simplify_index(const GiNaC::ex& expr, const Rayleigh_db& Rayleigh_list, service_locator& loc)
   {
     // pass to simplify_index with empty scalar product set
     return simplify_index(expr, GiNaC::scalar_products{}, Rayleigh_list, loc);

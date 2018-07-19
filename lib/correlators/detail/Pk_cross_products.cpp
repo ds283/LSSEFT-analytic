@@ -40,8 +40,8 @@ namespace cross_product_impl
         const auto& K1 = ker1.get_kernel();
         const auto& K2 = ker2.get_kernel();
 
-        const auto& rm1 = ker1.get_substitution_list();
-        const auto& rm2 = ker2.get_substitution_list();
+        const auto& rm1 = ker1.get_Rayleigh_db();
+        const auto& rm2 = ker2.get_Rayleigh_db();
 
         const auto& loops = data.get_loop_momenta();
 

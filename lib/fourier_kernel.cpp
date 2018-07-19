@@ -38,8 +38,8 @@ namespace fourier_kernel_impl
   {
 
     key::key(kernel& k)
-      : tm(k.tm),
-        iv(k.iv)
+      : tm(k.timef),
+        iv(k.init_values)
       {
       }
 
@@ -114,38 +114,39 @@ namespace fourier_kernel_impl
       }
 
 
-    kernel::kernel(GiNaC::ex K_, initial_value_set iv_, time_function tm_, subs_list vs_, service_locator& lc_)
+    kernel::kernel(GiNaC::ex K_, initial_value_set iv_, time_function tm_, Rayleigh_db vs_, service_locator& lc_)
       : K(std::move(K_)),
-        tm(std::move(tm_)),
-        iv(std::move(iv_)),
-        vs(std::move(vs_)),
+        timef(std::move(tm_)),
+        init_values(std::move(iv_)),
+        Rayleigh_list(std::move(vs_)),
         loc(lc_)
       {
         // normalize the time function, redistributing factors into the kernel if needed
-        auto norm = get_normalization_factor(tm, loc);
-        tm /= norm;
+        auto norm = get_normalization_factor(timef, loc);
+        timef /= norm;
         K *= norm;
       }
 
 
     kernel::kernel(initial_value_set iv_, service_locator& sl_)
       : K(1),
-        tm(1),
-        iv(std::move(iv_)),
-        loc(sl_)
+        timef(1),
+        init_values(std::move(iv_)),
+        loc(sl_),
+        Rayleigh_list(sl_)
       {
       }
 
     kernel& kernel::operator+=(const kernel& rhs)
       {
         // kernels can only be added if their time functions agree
-        if(static_cast<bool>(this->tm != rhs.tm))
+        if(static_cast<bool>(this->timef != rhs.timef))
           throw exception(ERROR_CANNOT_ADD_KERNELS_WITH_UNEQUAL_TIME_FUNCTIONS, exception_code::loop_transformation_error);
 
         // we need to relabel momenta in the right-hand-side if they do not match
         // our current labelling
-        auto our_mma = this->get_ordered_momenta();
-        auto their_mma = rhs.get_ordered_momenta();
+        auto our_mma = this->get_ordered_init_momenta();
+        auto their_mma = rhs.get_ordered_init_momenta();
         
         // check that momenta are compatible in the sense that their (ordered) symbol names agree
         if(!std::equal(our_mma.cbegin(), our_mma.cend(),
@@ -168,13 +169,13 @@ namespace fourier_kernel_impl
         
         // also need to remap and merge any substitution rules in the right-hand side
         using Rayleigh::merge_Rayleigh_rules;
-        auto relabel_map = merge_Rayleigh_rules(this->vs, rhs.vs, this->iv.get_momenta(), mma_map, this->loc);
+        auto relabel_map = merge_Rayleigh_rules(this->Rayleigh_list, rhs.Rayleigh_list, this->init_values.get_momenta(), mma_map, this->loc);
         std::copy(relabel_map.begin(), relabel_map.end(), std::inserter(mma_map, mma_map.begin()));
 
         // now perform relabelling in the kernel
         // note there's no need to perform *index* relabelling since this is a sum -- relabelling indices
         // is needed only in a product
-        auto temp = simplify_index(this->K + rhs.K.subs(mma_map), this->vs, this->loc);
+        auto temp = simplify_index(this->K + rhs.K.subs(mma_map), this->Rayleigh_list, this->loc);
         this->K = temp;
 
         return *this;
@@ -186,18 +187,18 @@ namespace fourier_kernel_impl
         auto& sf = this->loc.get_symbol_factory();
 
         // product time function is just product of each individual time function
-        this->tm *= rhs.tm;
+        this->timef *= rhs.timef;
     
         // build a substitution rule for all momenta in rhs that also occur for us
         GiNaC::exmap mma_map;
         
-        const auto our_syms = this->iv.get_momenta();
-        for(auto t = rhs.iv.value_cbegin(); t != rhs.iv.value_cend(); ++t)
+        const auto our_syms = this->init_values.get_momenta();
+        for(auto t = rhs.init_values.value_cbegin(); t != rhs.init_values.value_cend(); ++t)
           {
             const GiNaC::symbol& label = t->get_momentum();
             bool collision = false;
             if(our_syms.find(label) != our_syms.end()) collision = true;
-            if(this->vs.find(label) != this->vs.end()) collision = true;
+            if(this->Rayleigh_list.find(label) != this->Rayleigh_list.end()) collision = true;
             
             // if no collision can just keep the old symbol
             if(!collision) continue;
@@ -209,7 +210,7 @@ namespace fourier_kernel_impl
           }
     
         // merge RHS initial value list with ours
-        for(auto t = rhs.iv.value_cbegin(); t != rhs.iv.value_cend(); ++t)
+        for(auto t = rhs.init_values.value_cbegin(); t != rhs.init_values.value_cend(); ++t)
           {
             // get momentum for this field
             const auto& q = t->get_momentum();
@@ -220,39 +221,39 @@ namespace fourier_kernel_impl
               {
                 // yes, so merge the relabelled version
                 const auto& u_sym = GiNaC::ex_to<GiNaC::symbol>(u->second);
-                this->iv.insert(t->relabel_momentum(u_sym));
+                this->init_values.insert(t->relabel_momentum(u_sym));
               }
             else
               {
                 // no, so merge the original
-                this->iv.insert(*t);
+                this->init_values.insert(*t);
               }
           }
     
         // merge RHS substitution list with ours
         // (occurs after merging initial value list so all reserved symbols are captured)
         using Rayleigh::merge_Rayleigh_rules;
-        auto relabel_map = merge_Rayleigh_rules(this->vs, rhs.vs, this->iv.get_momenta(), mma_map, this->loc);
+        auto relabel_map = merge_Rayleigh_rules(this->Rayleigh_list, rhs.Rayleigh_list, this->init_values.get_momenta(), mma_map, this->loc);
         std::copy(relabel_map.begin(), relabel_map.end(), std::inserter(mma_map, mma_map.begin()));
 
         // build final expression, performing any necessary index (or other) relabellings on RHS
-        auto temp = simplify_index(relabel_index_product(this->K, rhs.K.subs(mma_map), this->loc), this->vs, this->loc);
+        auto temp = simplify_index(relabel_index_product(this->K, rhs.K.subs(mma_map), this->loc), this->Rayleigh_list, this->loc);
         this->K = temp;
 
         // renormalize time function
-        auto norm = get_normalization_factor(tm, loc);
-        this->tm /= norm;
+        auto norm = get_normalization_factor(timef, loc);
+        this->timef /= norm;
         this->K *= norm;
 
         return *this;
       }
     
     
-    kernel::momenta_list kernel::get_ordered_momenta() const
+    kernel::momenta_list kernel::get_ordered_init_momenta() const
       {
         momenta_list list;
         
-        for(auto t = this->iv.value_cbegin(); t != this->iv.value_cend(); ++t)
+        for(auto t = this->init_values.value_cbegin(); t != this->init_values.value_cend(); ++t)
           {
             list.emplace_back(std::cref(*t));
           }
@@ -304,12 +305,12 @@ namespace fourier_kernel_impl
 
         std::tie(time_factor, integrand_factor) = partition_factor(a, b.loc);
 
-        c.tm = GiNaC::collect_common_factors(c.tm.expand() * time_factor);
+        c.timef = GiNaC::collect_common_factors(c.timef.expand() * time_factor);
         c.K *= integrand_factor;
         
         // adjust normalization of time function if needed
-        auto norm = get_normalization_factor(c.tm, c.loc);
-        c.tm /= norm;
+        auto norm = get_normalization_factor(c.timef, c.loc);
+        c.timef /= norm;
         c.K *= norm;
 
         return c;
@@ -342,11 +343,11 @@ namespace fourier_kernel_impl
 
         kernel b = a;
         const auto& z = sf.get_z();
-        b.tm = GiNaC::diff(b.tm, z);
+        b.timef = GiNaC::diff(b.timef, z);
 
         // renormalize time function
-        auto norm = get_normalization_factor(b.tm, b.loc);
-        b.tm /= norm;
+        auto norm = get_normalization_factor(b.timef, b.loc);
+        b.timef /= norm;
         b.K *= norm;
 
         return b;
@@ -356,9 +357,9 @@ namespace fourier_kernel_impl
     vector kernel::get_total_momentum() const
       {
         // we're guaranteed that the initial value list is nonempty, so it's safe to dereference its first element
-        vector sum = *this->iv.value_cbegin();
+        vector sum = *this->init_values.value_cbegin();
         
-        for(auto t = ++this->iv.value_cbegin(); t != this->iv.value_cend(); ++t)
+        for(auto t = ++this->init_values.value_cbegin(); t != this->init_values.value_cend(); ++t)
           {
             sum += *t;
           }
@@ -369,7 +370,7 @@ namespace fourier_kernel_impl
     
     kernel& kernel::multiply_kernel(GiNaC::ex f)
       {
-        auto our_syms = this->iv.get_momenta();
+        auto our_syms = this->init_values.get_momenta();
         const auto& params = this->loc.get_symbol_factory().get_parameters();
         std::copy(params.begin(), params.end(), std::inserter(our_syms, our_syms.begin()));
     
@@ -388,8 +389,8 @@ namespace fourier_kernel_impl
         this->K *= f;
 
         // renormalize time function
-        auto norm = get_normalization_factor(tm, loc);
-        this->tm /= norm;
+        auto norm = get_normalization_factor(timef, loc);
+        this->timef /= norm;
         this->K *= norm;
 
         return *this;
@@ -398,7 +399,7 @@ namespace fourier_kernel_impl
     
     kernel& kernel::multiply_kernel(GiNaC::ex f, GiNaC::symbol s, GiNaC::ex rule)
       {
-        auto our_syms = this->iv.get_momenta();
+        auto our_syms = this->init_values.get_momenta();
         const auto& params = this->loc.get_symbol_factory().get_parameters();
         std::copy(params.begin(), params.end(), std::inserter(our_syms, our_syms.begin()));
 
@@ -428,7 +429,7 @@ namespace fourier_kernel_impl
           }
         
         // ensure that s doesn't already exist in replacement rule set
-        if(this->vs.find(s) != this->vs.end())
+        if(this->Rayleigh_list.find(s) != this->Rayleigh_list.end())
           {
             std::ostringstream msg;
             msg << ERROR_SUBSTITUTION_RULE_ALREADY_EXISTS << " '" << s << "'";
@@ -436,8 +437,8 @@ namespace fourier_kernel_impl
           }
 
         // check whether another rule with the same (or equivalent) RHS already exists
-        auto t = this->vs.begin();
-        for(; t != this->vs.end(); ++t)
+        auto t = this->Rayleigh_list.begin();
+        for(; t != this->Rayleigh_list.end(); ++t)
           {
             if(static_cast<bool>(t->second == rule))
               {
@@ -459,11 +460,11 @@ namespace fourier_kernel_impl
         this->K *= f;
 
         // insert new rule if needed
-        if(t == this->vs.end()) this->vs[s] = rule;
+        if(t == this->Rayleigh_list.end()) this->Rayleigh_list[s] = rule;
 
         // renormalize time function
-        auto norm = get_normalization_factor(tm, loc);
-        this->tm /= norm;
+        auto norm = get_normalization_factor(timef, loc);
+        this->timef /= norm;
         this->K *= norm;
 
         return *this;
@@ -472,19 +473,19 @@ namespace fourier_kernel_impl
     
     void kernel::write(std::ostream& out) const
       {
-        out << "  " << MESSAGE_KERNEL_TIME_FUNCTION << " = " << this->tm << '\n';
+        out << "  " << MESSAGE_KERNEL_TIME_FUNCTION << " = " << this->timef << '\n';
     
         out << "  " << MESSAGE_KERNEL_IVSET << " = ";
-        for(auto u = this->iv.value_cbegin(); u != this->iv.value_cend(); ++u)
+        for(auto u = this->init_values.value_cbegin(); u != this->init_values.value_cend(); ++u)
           {
             out << " " << u->get_symbol() << "(" << u->get_momentum() << ")";
           }
         out << '\n';
     
-        if(!this->vs.empty())
+        if(!this->Rayleigh_list.empty())
           {
             out << "  " << MESSAGE_KERNEL_RAYLEIGH_RULES << ":" << '\n';
-            for(const auto& u : vs)
+            for(const auto& u : Rayleigh_list)
               {
                 out << "    " << u.first << " -> " << u.second << '\n';
               }
@@ -516,7 +517,7 @@ namespace fourier_kernel_impl
             { SPT::fJ(z), 3*SPT::f(z) },
           };
 
-        this->tm = this->tm.subs(map);
+        this->timef = this->timef.subs(map);
       }
 
 
@@ -551,29 +552,26 @@ bool validate_ivset_nonempty(const initial_value_set& s, const GiNaC::ex& K, boo
   }
   
 
-void validate_subslist(const initial_value_set& s, const subs_list& vs)
+void validate_subslist(const initial_value_set& s, const Rayleigh_db& Rm)
   {
-    // ensure that substitution list is a map from plain symbols to expressions, and
-    // ensure that this list shares no common symbols with the initial value set
-    auto s_mma = s.get_momenta();
-    for(const auto& ele : vs)
+    // ensure that substitution list shares no common symbols with the initial value set
+    const auto Rayleigh_set = Rm.get_Rayleigh_labels();
+    const auto& iv_set = s.get_momenta();
+
+    // compute set intersection
+    GiNaC_symbol_set intersection;
+    std::set_intersection(Rayleigh_set.begin(), Rayleigh_set.end(),
+                          iv_set.begin(), iv_set.end(), intersection.begin());
+
+    // if no shared symbols, return
+    if(intersection.empty()) return;
+
+    // complain about shared symbols
+    for(const auto& sym : intersection)
       {
-        const GiNaC::ex& label = ele.first;
-        if(!GiNaC::is_exactly_a<GiNaC::symbol>(label))
-          {
-            std::ostringstream msg;
-            msg << ERROR_SUBSTITION_LABEL_NOT_A_SYMBOL << " '" << label << "'";
-            throw exception(msg.str(), exception_code::kernel_error);
-          }
-        
-        const GiNaC::symbol& sym = GiNaC::ex_to<GiNaC::symbol>(label);
-        if(s_mma.find(sym) != s_mma.end())
-          {
-            std::ostringstream msg;
-            msg << ERROR_SUBSTITUTION_LIST_HAS_IV_MOMENTUM << " '" << sym << "'";
-            throw exception(msg.str(), exception_code::kernel_error);
-          }
+        std::cerr << ERROR_SUBSTITUTION_LIST_HAS_IV_MOMENTUM << " '" << sym << "'" << '\n';
       }
+    throw exception(ERROR_SUBSTITUTION_LIST_HAS_IV_MOMENTUM, exception_code::kernel_error);
   }
 
 
@@ -602,7 +600,7 @@ void validate_momenta(const initial_value_set& s, const subs_list& vs, const GiN
     auto avail = s.get_momenta();
     auto avail_plus_params = avail;
     
-    // insert any symbols from the substitution list vs into the available set
+    // insert any symbols from the substitution list Rayleigh_list into the available set
     std::for_each(vs.begin(), vs.end(), [&](const subs_list::value_type& v) -> void
       {
         auto sym = GiNaC::ex_to<GiNaC::symbol>(v.first);

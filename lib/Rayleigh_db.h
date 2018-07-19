@@ -71,6 +71,7 @@ class Rayleigh_db
       {
       }
 
+
     //! destructor is default
     ~Rayleigh_db() = default;
 
@@ -80,28 +81,43 @@ class Rayleigh_db
   public:
 
     //! begin iterator
-    const_iterator begin() const { return this->db.cbegin(); }
+    const_iterator begin() const
+      { return this->db.cbegin(); }
+
 
     //! const begin iterator
-    const_iterator cbegin() const { return this->db.cbegin(); }
+    const_iterator cbegin() const
+      { return this->db.cbegin(); }
+
 
     //! reverse begin iterator
-    const_reverse_iterator rbegin() const { return this->db.rbegin(); }
+    const_reverse_iterator rbegin() const
+      { return this->db.rbegin(); }
+
 
     //! const reverse begin iterator
-    const_reverse_iterator crbegin() const { return this->db.crbegin(); }
+    const_reverse_iterator crbegin() const
+      { return this->db.crbegin(); }
+
 
     //! end iterator
-    const_iterator end() const { return this->db.cend(); }
+    const_iterator end() const
+      { return this->db.cend(); }
+
 
     //! const end iterator
-    const_iterator cend() const { return this->db.cend(); }
+    const_iterator cend() const
+      { return this->db.cend(); }
+
 
     //! reverse end iterator
-    const_reverse_iterator rend() const { return this->db.rend(); }
+    const_reverse_iterator rend() const
+      { return this->db.rend(); }
+
 
     //! const reverse end iterator
-    const_reverse_iterator crend() const { return this->db.crend(); }
+    const_reverse_iterator crend() const
+      { return this->db.crend(); }
 
 
     // EMPLACE
@@ -157,13 +173,13 @@ class Rayleigh_db
     //! used during relabelling is supplied in 'reserved'.
     //! Constraints are merged by default but this behaviour can optionally be disabled.
     GiNaC::exmap merge(const Rayleigh_db& source, const GiNaC_symbol_set& reserved, const GiNaC::exmap& subs_rules,
-                       bool merge_constraints=true);
+                       bool merge_constraints = true);
 
     //! same as merge(), but update the set of reserved symbols with symbols from both the source database and
     //! ourselves. This means that future merges won't generate ambiguous symbols that could be confused
     //! with symbols involved in early merges.
     GiNaC::exmap merge_and_update_reserved(const Rayleigh_db& source, const GiNaC_symbol_set& reserved,
-                                           const GiNaC::exmap& subs_rules, bool merge_constraints=true);
+                                           const GiNaC::exmap& subs_rules, bool merge_constraints = true);
 
     //! get ordered set of Rayleigh momenta
     GiNaC_symbol_set get_Rayleigh_labels() const;

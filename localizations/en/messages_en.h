@@ -62,7 +62,6 @@ constexpr auto ERROR_KERNEL_NOT_RATIONAL = "Kernel is not a rational function of
 constexpr auto ERROR_UNKNOWN_MOMENTA_SING = "Kernel depends on unknown momentum vector";
 constexpr auto ERROR_UNKNOWN_MOMENTA_PLURAL = "Kernel depends on unknown momentum vectors";
 constexpr auto ERROR_REPEATED_INITIAL_MOMENTUM = "Attempt to add new initial value with duplicate momentum";
-constexpr auto ERROR_SUBSTITION_LABEL_NOT_A_SYMBOL = "Kernel substitution list contains a complex element";
 constexpr auto ERROR_SUBSTITUTION_LIST_HAS_IV_MOMENTUM = "Kernel substitution list contains initial momentum";
 constexpr auto ERROR_MULTIPLY_KERNEL_UNKNOWN_MOMENTUM = "Kernel multiplicand depends on unknown momentum";
 constexpr auto ERROR_SUBSTITUTION_RULE_ALREADY_EXISTS = "Redefinition of existing substitution rule";

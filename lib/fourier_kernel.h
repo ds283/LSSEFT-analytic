@@ -35,6 +35,7 @@
 
 #include "initial_value.h"
 #include "vector.h"
+#include "Rayleigh_db.h"
 
 #include "services/service_locator.h"
 
@@ -98,19 +99,20 @@ namespace fourier_kernel_impl
         
         //! a momenta_list is a list of initial_value references, ordered by symbol name
         using momenta_list = std::vector< std::reference_wrapper<const initial_value> >;
-        
+
+
         // CONSTRUCTOR, DESTRUCTOR
         
       public:
         
-        //! constructor accepts a GiNaC expression and a list corresponding to
+        //! constructor accepts a GiNaC expression and a database of 'Rayleigh momenta' corresponding to
         //! non-rotationally-invariant combinations of momenta that appear in the denominator;
-        //! these will need to be handled by a Rayleigh plane wave expansion when computing
+        //! these need to be handled by a Rayleigh plane wave expansion when computing
         //! correlation functions
-        kernel(GiNaC::ex K_, initial_value_set iv_, time_function tm_, subs_list vs_,
+        kernel(GiNaC::ex K_, initial_value_set iv_, time_function tm_, Rayleigh_db vs_,
                service_locator& lc_);
 
-        //! alternative constructor accepts just an initial_value_set and a symbol factory refernce;
+        //! alternative constructor accepts just an initial_value_set and a symbol factory reference;
         //! sets momentum kernel and time function to unity
         kernel(initial_value_set iv_, service_locator& sl_);
         
@@ -123,7 +125,7 @@ namespace fourier_kernel_impl
       public:
         
         //! get order of this term
-        size_t order() const { return this->iv.size(); }
+        size_t order() const { return this->init_values.size(); }
         
         //! get total momentum = sum of dummy momenta
         vector get_total_momentum() const;
@@ -137,13 +139,13 @@ namespace fourier_kernel_impl
       public:
     
         //! get time function
-        const time_function& get_time_function() const { return this->tm; }
+        const time_function& get_time_function() const { return this->timef; }
     
         //! get initial value list
-        const initial_value_set& get_initial_value_set() const { return this->iv; }
+        const initial_value_set& get_initial_value_set() const { return this->init_values; }
         
-        //! get substitution list
-        const subs_list& get_substitution_list() const { return this->vs; }
+        //! get database of Rayleigh momenta
+        const Rayleigh_db& get_Rayleigh_db() const { return this->Rayleigh_list; }
         
         //! get kernel expression
         const GiNaC::ex& get_kernel() const { return this->K; }
@@ -182,7 +184,7 @@ namespace fourier_kernel_impl
       protected:
         
         //! get list of momentum labels, in order corresponding to lexical order of symbols
-        momenta_list get_ordered_momenta() const;
+        momenta_list get_ordered_init_momenta() const;
         
         
         // INTERNAL DATA
@@ -201,13 +203,13 @@ namespace fourier_kernel_impl
         GiNaC::ex K;
         
         //! time function
-        time_function tm;
+        time_function timef;
         
         //! cache initial value set
-        initial_value_set iv;
+        initial_value_set init_values;
         
-        //! cache list of non-invariant denominator combinations
-        subs_list vs;
+        //! cache list of Rayleigh momenta appearing in denominators
+        Rayleigh_db Rayleigh_list;
         
         
         friend class key;
@@ -444,8 +446,11 @@ class fourier_kernel
     // ITERATORS
     
   public:
-    
+
+    //! const begin
     kernel_db::const_iterator cbegin() const { return this->kernels.cbegin(); }
+
+    //! const end
     kernel_db::const_iterator cend() const   { return this->kernels.cend(); }
     
     
@@ -455,23 +460,23 @@ class fourier_kernel
     
     //! add a kernel of the form t * K(q1, q2, ..., qn) * s(q1, q2, ..., qn)
     //! where t is a time function, s is a string of stochastic initial conditions,
-    //! and K is the Fourier kernel. The optional list of GiNaC expressions
-    //! noninv_list can be used to indicate rotationally-noninvariant combinations that
-    //! appear in the denominator, and which should be handled by Rayleigh plane-wave
+    //! and K is the Fourier kernel. 'Rayleigh_list' should contain a Rayleigh_db
+    //! database listing rotationally-noninvariant combinations that
+    //! appear in the denominator and should be handled by Rayleigh plane-wave
     //! expansion when computing correlation functions.
     //! WARNING: if any rotationally noninvariant expression appear explicitly in the
-    //! denominator then any computed correlation functions are unlikely to be reliable
+    //! denominator then computed correlation functions are unlikely to be reliable
     fourier_kernel&
-    add(time_function t, initial_value_set s, GiNaC::ex K, subs_list vs = subs_list{});
+    add(time_function t, initial_value_set s, GiNaC::ex K, Rayleigh_db Rm);
     
-    //! add a kernel
+    //! add a kernel directly
     fourier_kernel& add(kernel_type ker);
     
   protected:
     
     //! implementation: add a kernel
     fourier_kernel&
-    add(time_function t, initial_value_set s, GiNaC::ex K, subs_list vs, bool silent);
+    add(time_function t, initial_value_set s, GiNaC::ex K, Rayleigh_db Rm, bool silent);
     
     //! implementation: add a kernel
     fourier_kernel& add(kernel_type ker, bool silent);
@@ -555,7 +560,7 @@ class fourier_kernel
 bool validate_ivset_nonempty(const initial_value_set& s, const GiNaC::ex& K, bool silent);
 
 //! validate that a substitution list doesn't overlap with an initial value list
-void validate_subslist(const initial_value_set& s, const subs_list& vs);
+void validate_subslist(const initial_value_set& s, const Rayleigh_db& Rm);
 
 //! validate that a given kernel has the correct structure (is a scalar, is a rational function of the momenta)
 void validate_structure(const GiNaC::ex& K);
@@ -580,35 +585,35 @@ std::pair<GiNaC::ex, GiNaC::ex> partition_factor(const GiNaC::ex& expr, service_
 template <unsigned int N>
 fourier_kernel<N>& fourier_kernel<N>::add(kernel_type k)
   {
-    return this->add(k.get_time_function(), k.get_initial_value_set(), k.get_kernel(), k.get_substitution_list(), false);
+    return this->add(k.get_time_function(), k.get_initial_value_set(), k.get_kernel(), k.get_Rayleigh_db(), false);
   }
 
 
 template <unsigned int N>
 fourier_kernel<N>& fourier_kernel<N>::add(kernel_type k, bool silent)
   {
-    return this->add(k.get_time_function(), k.get_initial_value_set(), k.get_kernel(), k.get_substitution_list(), silent);
+    return this->add(k.get_time_function(), k.get_initial_value_set(), k.get_kernel(), k.get_Rayleigh_db(), silent);
   }
 
 
 template <unsigned int N>
 fourier_kernel<N>&
-fourier_kernel<N>::add(time_function t, initial_value_set s, GiNaC::ex K, subs_list vs)
+fourier_kernel<N>::add(time_function t, initial_value_set s, GiNaC::ex K, Rayleigh_db Rm)
   {
-    return this->add(std::move(t), std::move(s), std::move(K), std::move(vs), false);
+    return this->add(std::move(t), std::move(s), std::move(K), std::move(Rm), false);
   }
 
 
 template <unsigned int N>
 fourier_kernel<N>&
-fourier_kernel<N>::add(time_function t, initial_value_set s, GiNaC::ex K, subs_list vs, bool silent)
+fourier_kernel<N>::add(time_function t, initial_value_set s, GiNaC::ex K, Rayleigh_db Rm, bool silent)
   {
     // warn if initial value set is empty
     if(!validate_ivset_nonempty(s, K, silent)) return *this;
 
     // ensure that the substitution list (used to specify remappings for Rayleigh momenta)
     // is of the correct format
-    validate_subslist(s, vs);
+    validate_subslist(s, Rm);
 
     // normalize the time function, redistributing factors into the kernel if needed
     auto norm = get_normalization_factor(t, this->loc);
@@ -616,21 +621,21 @@ fourier_kernel<N>::add(time_function t, initial_value_set s, GiNaC::ex K, subs_l
     K *= norm;
 
     // simplify index structure in K if possible
-    K = simplify_index(K, vs, this->loc);
+    K = simplify_index(K, Rm, this->loc);
 
     // validate that K is structurally OK (scalar, rational)
     validate_structure(K);
     
     // validate that momentum variables used in K match those listed in the stochastic terms
-    validate_momenta(s, vs, K, this->loc.get_symbol_factory().get_parameters(), silent);
+    validate_momenta(s, Rm, K, this->loc.get_symbol_factory().get_parameters(), silent);
 
     if(this->loc.get_argument_cache().get_auto_symmetrize())
       {
-        this->insert_symmetric(std::move(t), std::move(s), std::move(K), std::move(vs));
+        this->insert_symmetric(std::move(t), std::move(s), std::move(K), std::move(Rm));
         return *this;
       }
 
-    this->insert_raw(std::move(t), std::move(s), std::move(K), std::move(vs));
+    this->insert_raw(std::move(t), std::move(s), std::move(K), std::move(Rm));
     return *this;
   }
 
@@ -723,7 +728,7 @@ void fourier_kernel<N>::write(std::ostream& out) const
         
         const time_function& tm = ker.get_time_function();
         const initial_value_set& ivs = ker.get_initial_value_set();
-        const subs_list& vs = ker.get_substitution_list();
+        const subs_list& vs = ker.get_Rayleigh_db();
         
         out << "Kernel " << count << "." << '\n';
         t.second->write(out);

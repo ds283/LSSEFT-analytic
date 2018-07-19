@@ -54,6 +54,9 @@ namespace std
 // forward-declare service locator
 class service_locator;
 
+// forward-declare Rayleigh database
+class Rayleigh_db;
+
 
 //! set of GiNaC symbols, with comparison performed lexicographically by name
 //! (GiNaC does not provide this option itself; only GiNaC::ex_is_less which is not the same)
@@ -70,11 +73,11 @@ GiNaC_symbol_set get_expr_indices(const GiNaC::ex& expr, size_t min_occurrences=
 //! GiNaC's internal simplify_indexed() is broken, because it does not handle
 //! index sums in the denominator or as the argument of powers with exponent other than +2
 //! This is an alternative implementation that handles such cases
-GiNaC::ex simplify_index(const GiNaC::ex& expr, const GiNaC::scalar_products& sp, const GiNaC::exmap& Rayleigh_list,
+GiNaC::ex simplify_index(const GiNaC::ex& expr, const GiNaC::scalar_products& sp, const Rayleigh_db& Rayleigh_list,
                          service_locator& loc);
 
 //! version of simplify_index() without scalar_products table
-GiNaC::ex simplify_index(const GiNaC::ex& expr, const GiNaC::exmap& Rayleigh_list, service_locator& loc);
+GiNaC::ex simplify_index(const GiNaC::ex& expr, const Rayleigh_db& Rayleigh_list, service_locator& loc);
 
 //! GiNaC's internal is_rational() is broken, because it does not handle
 //! indexed quantities
