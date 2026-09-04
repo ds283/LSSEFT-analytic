@@ -3,7 +3,7 @@
 **Prompt:** `prompts/pre-python-migration-fixes/01-deboost-and-build.md`
 **Executed:** 2026-09-04
 **Branch:** `pre-python-migration-fixes/01-deboost-and-build`
-**Commit:** *(recorded in IMPLEMENTATION_STATE.md after commit)* — `Remove Boost dependency and move to C++17`
+**Commit:** `2e75f7f2c6927a1dc12314c5fa60de607fe96646` — `Remove Boost dependency and move to C++17`
 **Parent commit:** `4657672740a232a403d1c35c06adb156b5ceabc9`
 **Status:** Complete
 
