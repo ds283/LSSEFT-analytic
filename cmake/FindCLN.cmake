@@ -36,7 +36,7 @@ set(CLN_FOUND)
 set(CLN_INCLUDE_DIR)
 set(CLN_LIBRARIES)
 
-include(FindPkgConfig)
+find_package(PkgConfig)
 if (PKG_CONFIG_FOUND)
   pkg_check_modules(_cln cln)
 endif()
