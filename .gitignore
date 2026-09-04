@@ -5,4 +5,7 @@
 # output trees produced by validation/run.sh
 /validation/out/
 
+# bytecode cache from the validation/ Python tooling
+__pycache__/
+
 .DS_Store

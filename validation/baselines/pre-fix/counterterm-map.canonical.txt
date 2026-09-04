@@ -1,0 +1,777 @@
+# validation/baselines/pre-fix/counterterm-map.canonical.txt
+#
+# The counterterm map with each entry's *print order* canonicalised (operands of every
+# commutative '*' and '+'/'-' recursively sorted, leading signs normalised) and the lines
+# sorted. This is the form that is actually comparable between runs. Regenerate with:
+#
+#   python3 validation/canonical_form.py --counterterm-map run.log
+#
+# Measured: a single md5 across all five runs of the non-determinism study AND the
+# --auto-symmetrize run -- six independent processes, one canonical form.
+#
+# It canonicalises print order only, and does no algebra: it will not see through
+# distribution, '2*a' vs 'a+a', a factor moved in or out of a bracket, or a change of
+# exponent form. That is deliberate -- a real change to the counterterm map must still
+# show up as a difference here.
+#
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+   -> mu^0 = ((+12*DA(z)*f(z)^(-1)*fA(z)+12*DB(z)*f(z)^(-1)*fB(z)-17*D(z)^2))*1/30*D(z)^2*Pi^(-2)*Pk(delta,delta,L0)*Pk(delta,delta,k)
+   -> mu^0 = ((+14*DA(z)+20*DB(z)+5*DA(z)*f(z)^(-1)*fA(z)+6*DB(z)*f(z)^(-1)*fB(z)-6*D(z)^2))*1/6*D(z)^2*L0^2*Pi^(-2)*Pk(delta,delta,L0)*Pk(delta,delta,k)
+   -> mu^0 = ((+2*D(z)^2*Pk(delta,delta,L0)+2*DB(z)*Pk(delta,delta,L0)-2*D(z)^2*D[2](Pk)(delta,delta,L0)*L0-D(z)^2*D[2,2](Pk)(delta,delta,L0)*L0^2-DA(z)*Pk(delta,delta,L0)))*1/3*D(z)^2*Pi^(-2)*Pk(delta,delta,L0)
+   -> mu^0 = ((+2*D[2](Pk)(delta,delta,L0)*L0+D[2,2](Pk)(delta,delta,L0)*L0^2-2*Pk(delta,delta,L0)))*1/6*D(z)^4*Pi^(-2)*Pk(delta,delta,L0)
+   -> mu^0 = ((+2*D[2](Pk)(delta,delta,L0)+D[2,2](Pk)(delta,delta,L0)*L0))*1/24*D(z)^4*L0*Pi^(-2)*Pk(delta,delta,L0)
+   -> mu^0 = ((+3*D(z)^2+6*DA(z)+8*DB(z)))*1/3*D(z)^2*L0^2*Pi^(-2)*Pk(delta,delta,L0)*Pk(delta,delta,k)
+   -> mu^0 = ((+DA(z)*f(z)^(-1)*fA(z)+DB(z)*f(z)^(-1)*fB(z)-D(z)^2-DA(z)-DB(z)))*32/15*D(z)^2*Pi^(-2)*Pk(delta,delta,L0)*Pk(delta,delta,k)
+   -> mu^0 = -((+10*DB(z)+7*DA(z)-D(z)^2))*1/3*D(z)^2*L0^2*Pi^(-2)*Pk(delta,delta,L0)*Pk(delta,delta,k)
+   -> mu^0 = -((+12*D(z)*DA(z)*f(z)^(-1)*fA(z)+12*D(z)*DB(z)*f(z)^(-1)*fB(z)+36*DD(z)+56*DE(z)-10*D(z)*DA(z)-14*DF(z)-20*D(z)*DB(z)-26*DJ(z)-4*DG(z)-7*D(z)^3))*1/30*D(z)*Pi^(-2)*Pk(delta,delta,L0)*Pk(delta,delta,k)
+   -> mu^0 = -((+2*D(z)^2*Pk(delta,delta,L0)+4*DB(z)*Pk(delta,delta,L0)-2*D(z)^2*D[2](Pk)(delta,delta,L0)*L0-2*DA(z)*Pk(delta,delta,L0)-D(z)^2*D[2,2](Pk)(delta,delta,L0)*L0^2))*1/6*D(z)^2*Pi^(-2)*Pk(delta,delta,L0)
+   -> mu^0 = -((+2*DB(z)*Pk(delta,delta,L0)+D(z)^2*Pk(delta,delta,L0)-2*D(z)^2*D[2](Pk)(delta,delta,L0)*L0-D(z)^2*D[2,2](Pk)(delta,delta,L0)*L0^2-DA(z)*Pk(delta,delta,L0)))*1/6*D(z)^2*Pi^(-2)*Pk(delta,delta,L0)
+   -> mu^0 = -((+2*DB(z)+DA(z)-D(z)^2))*1/3*D(z)^2*Pi^(-2)*Pk(delta,delta,L0)*Pk(delta,delta,k)
+   -> mu^0 = -((+2*D[2](Pk)(delta,delta,L0)*L0+D[2,2](Pk)(delta,delta,L0)*L0^2-Pk(delta,delta,L0)))*1/6*D(z)^4*Pi^(-2)*Pk(delta,delta,L0)
+   -> mu^0 = -((+5*DA(z)*f(z)^(-1)*fA(z)+6*DB(z)*f(z)^(-1)*fB(z)-4*D(z)^2))*1/6*D(z)^2*L0^2*Pi^(-2)*Pk(delta,delta,L0)*Pk(delta,delta,k)
+   -> mu^0 = -((+DA(z)+DB(z)))*32/15*D(z)^2*Pi^(-2)*Pk(delta,delta,L0)*Pk(delta,delta,k)
+   -> mu^0 = -2*D(z)^4*L0^2*Pi^(-2)*Pk(delta,delta,L0)^2
+   -> mu^0 = -2/3*D(z)^4*Pi^(-2)*Pk(delta,delta,L0)^2
+   -> mu^0 = -4/3*D(z)^4*L0^2*Pi^(-2)*Pk(delta,delta,L0)*Pk(delta,delta,k)
+   -> mu^0 = -4/3*D(z)^4*L0^2*Pi^(-2)*Pk(delta,delta,L0)*Pk(delta,delta,k)
+   -> mu^0 = -4/3*D(z)^4*Pi^(-2)*Pk(delta,delta,L0)^2
+   -> mu^0 = -D(z)^4*L0^2*Pi^(-2)*Pk(delta,delta,L0)*Pk(delta,delta,k)
+   -> mu^0 = -D(z)^4*L0^2*Pi^(-2)*Pk(delta,delta,L0)^2
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 0
+   -> mu^0 = 1/2*D(z)^4*L0^2*Pi^(-2)*Pk(delta,delta,L0)*Pk(delta,delta,k)
+   -> mu^0 = 1/4*D(z)^4*L0^2*Pi^(-2)*Pk(delta,delta,L0)^2
+   -> mu^0 = 4/3*D(z)^4*L0^2*Pi^(-2)*Pk(delta,delta,L0)*Pk(delta,delta,k)
+   -> mu^0 = 4/3*D(z)^4*Pi^(-2)*Pk(delta,delta,L0)^2
+   -> mu^0 = D(z)^4*L0^2*Pi^(-2)*Pk(delta,delta,L0)^2
+   -> mu^0 = D(z)^4*L0^2*Pi^(-2)*Pk(delta,delta,L0)^2
+   -> mu^0 = D(z)^4*L0^2*Pi^(-2)*Pk(delta,delta,L0)^2
+   -> mu^2 = ((+10*D(z)*DA(z)*f(z)+14*DF(z)*f(z)+20*D(z)*DB(z)*f(z)+26*DJ(z)*f(z)+4*DG(z)*f(z)+7*D(z)^3*f(z)-12*D(z)*DA(z)*fA(z)-12*D(z)*DB(z)*fB(z)-36*DD(z)*f(z)-56*DE(z)*f(z)))*1/30*D(z)*Pi^(-2)*Pk(delta,delta,L0)*Pk(delta,delta,k)
+   -> mu^2 = ((+14*DA(z)*f(z)+20*DB(z)*f(z)+5*DA(z)*fA(z)+6*DB(z)*fB(z)-6*D(z)^2*f(z)))*1/6*D(z)^2*L0^2*Pi^(-2)*Pk(delta,delta,L0)*Pk(delta,delta,k)
+   -> mu^2 = ((+2*DB(z)*fB(z)+D(z)^2*f(z)+D(z)^2*f(z)^2-DA(z)*fA(z)))*1/3*D(z)^2*Pi^(-2)*Pk(delta,delta,L0)^2
+   -> mu^2 = ((+2*DB(z)*fB(z)+DA(z)*fA(z)-5*D(z)^2*f(z)))*1/3*D(z)^2*L0^2*Pi^(-2)*Pk(delta,delta,L0)*Pk(delta,delta,k)
+   -> mu^2 = ((+24*DA(z)*fA(z)+24*DB(z)*fB(z)-34*D(z)^2*f(z)-5*D(z)^2*f(z)^2))*1/30*D(z)^2*Pi^(-2)*Pk(delta,delta,L0)*Pk(delta,delta,k)
+   -> mu^2 = ((+3*D(z)^2+6*DA(z)+8*DB(z)))*1/3*D(z)^2*L0^2*Pi^(-2)*Pk(delta,delta,L0)*Pk(delta,delta,k)*f(z)
+   -> mu^2 = ((+DA(z)*fA(z)+DB(z)*fB(z)-D(z)^2*f(z)-DA(z)*f(z)-DB(z)*f(z)))*32/15*D(z)^2*Pi^(-2)*Pk(delta,delta,L0)*Pk(delta,delta,k)
+   -> mu^2 = -((+10*DB(z)*fB(z)+7*DA(z)*fA(z)-2*DA(z)*f(z)-4*DB(z)*f(z)-6*D(z)^2*f(z)))*1/6*D(z)^2*L0^2*Pi^(-2)*Pk(delta,delta,L0)*Pk(delta,delta,k)
+   -> mu^2 = -((+10*DB(z)+7*DA(z)-D(z)^2))*1/3*D(z)^2*L0^2*Pi^(-2)*Pk(delta,delta,L0)*Pk(delta,delta,k)*f(z)
+   -> mu^2 = -((+12*D(z)*DA(z)*fA(z)+12*D(z)*DB(z)*fB(z)+16*D(z)*DA(z)*f(z)*fA(z)+16*D(z)*DB(z)*f(z)*fB(z)+36*DD(z)*fD(z)+56*DE(z)*fE(z)-10*D(z)*DA(z)*f(z)-14*DF(z)*fF(z)-16*D(z)^3*f(z)^2-20*D(z)*DB(z)*f(z)-26*DJ(z)*fJ(z)-4*DG(z)*fG(z)-7*D(z)^3*f(z)))*1/30*D(z)*Pi^(-2)*Pk(delta,delta,L0)*Pk(delta,delta,k)
+   -> mu^2 = -((+2*DB(z)*fB(z)+D(z)^2*f(z)+D(z)^2*f(z)^2-DA(z)*fA(z)))*1/3*D(z)^2*Pi^(-2)*Pk(delta,delta,L0)^2
+   -> mu^2 = -((+2*DB(z)*fB(z)+D(z)^2*f(z)+D(z)^2*f(z)^2-DA(z)*fA(z)))*1/6*D(z)^2*Pi^(-2)*Pk(delta,delta,L0)^2
+   -> mu^2 = -((+2*DB(z)+DA(z)-4*D(z)^2))*1/3*D(z)^2*L0^2*Pi^(-2)*Pk(delta,delta,L0)*Pk(delta,delta,k)*f(z)
+   -> mu^2 = -((+2*DB(z)+DA(z)-D(z)^2))*1/3*D(z)^2*Pi^(-2)*Pk(delta,delta,L0)*Pk(delta,delta,k)*f(z)
+   -> mu^2 = -((+2*DB(z)+DA(z)-D(z)^2))*1/3*D(z)^2*Pi^(-2)*Pk(delta,delta,L0)*Pk(delta,delta,k)*f(z)
+   -> mu^2 = -((+DA(z)+DB(z)))*32/15*D(z)^2*Pi^(-2)*Pk(delta,delta,L0)*Pk(delta,delta,k)*f(z)
+   -> mu^2 = -1/3*D(z)^4*Pi^(-2)*Pk(delta,delta,L0)^2*f(z)
+   -> mu^2 = -4/3*D(z)^4*L0^2*Pi^(-2)*Pk(delta,delta,L0)*Pk(delta,delta,k)*f(z)
+   -> mu^2 = -4/3*D(z)^4*L0^2*Pi^(-2)*Pk(delta,delta,L0)*Pk(delta,delta,k)*f(z)
+   -> mu^2 = -D(z)^4*L0^2*Pi^(-2)*Pk(delta,delta,L0)*Pk(delta,delta,k)*f(z)
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 0
+   -> mu^2 = 1/2*D(z)^4*L0^2*Pi^(-2)*Pk(delta,delta,L0)*Pk(delta,delta,k)*f(z)
+   -> mu^2 = 1/2*D(z)^4*L0^2*Pi^(-2)*Pk(delta,delta,L0)*Pk(delta,delta,k)*f(z)
+   -> mu^2 = 1/3*D(z)^4*Pi^(-2)*Pk(delta,delta,L0)^2*f(z)
+   -> mu^2 = 1/6*D(z)^4*Pi^(-2)*Pk(delta,delta,L0)^2*f(z)
+   -> mu^2 = 4/3*D(z)^4*L0^2*Pi^(-2)*Pk(delta,delta,L0)*Pk(delta,delta,k)*f(z)
+   -> mu^4 = ((+11*DA(z)*fA(z)+6*DB(z)*fB(z)-16*D(z)^2*f(z)-5*D(z)^2*f(z)^2))*1/15*D(z)^2*Pi^(-2)*Pk(delta,delta,L0)*Pk(delta,delta,k)*f(z)
+   -> mu^4 = ((+2*DB(z)*fB(z)+DA(z)*fA(z)-5*D(z)^2*f(z)))*1/3*D(z)^2*L0^2*Pi^(-2)*Pk(delta,delta,L0)*Pk(delta,delta,k)*f(z)
+   -> mu^4 = -((+12*D(z)*DA(z)*fA(z)+12*D(z)*DB(z)*fB(z)+18*DD(z)*fD(z)+28*DE(z)*fE(z)+8*D(z)*DA(z)*f(z)*fA(z)+8*D(z)*DB(z)*f(z)*fB(z)-10*D(z)*DB(z)*f(z)-12*D(z)^3*f(z)-13*DJ(z)*fJ(z)-2*DG(z)*fG(z)-5*D(z)*DA(z)*f(z)-7*DF(z)*fF(z)-8*D(z)^3*f(z)^2))*1/15*D(z)*Pi^(-2)*Pk(delta,delta,L0)*Pk(delta,delta,k)*f(z)
+   -> mu^4 = -((+2*DB(z)*fB(z)+DA(z)*fA(z)-2*DB(z)*f(z)-D(z)^2*f(z)-DA(z)*f(z)))*1/3*D(z)^2*L0^2*Pi^(-2)*Pk(delta,delta,L0)*Pk(delta,delta,k)*f(z)
+   -> mu^4 = -((+2*DB(z)+DA(z)-4*D(z)^2))*1/3*D(z)^2*L0^2*Pi^(-2)*Pk(delta,delta,L0)*Pk(delta,delta,k)*f(z)^2
+   -> mu^4 = -((+2*DB(z)+DA(z)-D(z)^2))*1/3*D(z)^2*Pi^(-2)*Pk(delta,delta,L0)*Pk(delta,delta,k)*f(z)^2
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 0
+   -> mu^4 = 1/2*D(z)^4*L0^2*Pi^(-2)*Pk(delta,delta,L0)*Pk(delta,delta,k)*f(z)^2
+   -> mu^6 = -((+12*DB(z)*fB(z)+2*DA(z)*fA(z)+5*D(z)^2*f(z)^2-2*D(z)^2*f(z)))*1/30*D(z)^2*Pi^(-2)*Pk(delta,delta,L0)*Pk(delta,delta,k)*f(z)^2
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^6 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+   -> mu^8 = 0
+** COUNTERTERM MAP
+-- b1_1
+-- b1_1
+-- b1_1_b1_1
+-- b1_1_b1_1
+-- b1_1_b1_2
+-- b1_1_b1_2
+-- b1_1_b1_3
+-- b1_1_b1_3
+-- b1_1_b2_2
+-- b1_1_b2_2
+-- b1_1_b2_3
+-- b1_1_b2_3
+-- b1_1_b3
+-- b1_1_b3
+-- b1_1_bG2_2
+-- b1_1_bG2_2
+-- b1_1_bG2_3
+-- b1_1_bG2_3
+-- b1_1_bGamma3
+-- b1_1_bGamma3
+-- b1_1_bdG2
+-- b1_1_bdG2
+-- b1_2
+-- b1_2
+-- b1_2_b1_2
+-- b1_2_b1_2
+-- b1_2_b2_2
+-- b1_2_b2_2
+-- b1_2_bG2_2
+-- b1_2_bG2_2
+-- b1_3
+-- b1_3
+-- b2_2
+-- b2_2
+-- b2_2_b2_2
+-- b2_2_b2_2
+-- b2_2_bG2_2
+-- b2_2_bG2_2
+-- b2_3
+-- b2_3
+-- b3
+-- b3
+-- bG2_2
+-- bG2_2
+-- bG2_2_bG2_2
+-- bG2_2_bG2_2
+-- bG2_3
+-- bG2_3
+-- bGamma3
+-- bGamma3
+-- bdG2
+-- bdG2
+-- nobias
+-- nobias
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^0
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+@ k^2
+OPERATOR MIXING:
+STOCHASTIC COUNTERTERMS:
