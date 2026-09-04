@@ -46,7 +46,7 @@ namespace detail
             const auto& label_sym = GiNaC::ex_to<GiNaC::symbol>(label);
 
             const GiNaC::ex& value = v.second.subs(subs_rules);
-            
+
 //            if(static_cast<bool>(value == 0))
 //              throw exception(ERROR_RAYLEIGH_MOMENTUM_IS_ZERO, exception_code::Rayleigh_error);
 
@@ -62,17 +62,26 @@ namespace detail
                 continue;
               }
 
-            u = std::find_if(dest.begin(), dest.end(),
-                             [&](const auto& a) -> bool { return static_cast<bool>(a.second == -value); });
-
-            // if one exists, just add a relabelling rule that will redirect this Rayleigh symbol
-            // to the existing definition
-            if(u != dest.end())
+            // guard against value == 0: -0 == 0, so this search would otherwise re-test exactly the
+            // same predicate as the 'value' search above (which has already run, and which would
+            // already have taken the 'continue' above had it matched). Without this guard, the two
+            // searches silently collapse into the same test whenever value == 0, aliasing every
+            // zero-valued rule onto whichever zero-valued rule happened to be created first -- a
+            // trap even though the outcome is currently unused (see Rayleigh_momenta.cpp callers).
+            if(!static_cast<bool>(value == 0))
               {
-                mma_map[label_sym] = -u->first;
-                continue;
+                u = std::find_if(dest.begin(), dest.end(),
+                                 [&](const auto& a) -> bool { return static_cast<bool>(a.second == -value); });
+
+                // if one exists, just add a relabelling rule that will redirect this Rayleigh symbol
+                // to the existing definition
+                if(u != dest.end())
+                  {
+                    mma_map[label_sym] = -u->first;
+                    continue;
+                  }
               }
-            
+
             // there was no match, so need to add a new relabelling rule
             
             // first, is there a symbol collision?
@@ -90,7 +99,7 @@ namespace detail
             
             // otherwise, need to manufacture a new symbol
             auto relabel = sf.make_unique_Rayleigh_momentum();
-            
+
             mma_map[label_sym] = relabel;
             dest[relabel] = value;
           }
