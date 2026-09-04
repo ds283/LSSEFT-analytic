@@ -3,7 +3,7 @@
 **Prompt:** `prompts/pre-python-migration-fixes/05-numeric-and-shape-hygiene.md`
 **Executed:** 2026-09-04
 **Branch:** `pre-python-migration-fixes/05-numeric-and-shape-hygiene`
-**Commit:** *(recorded after commit; see `IMPLEMENTATION_STATE.md`)*
+**Commit:** `2e95be9` — `Replace A(r) with its closed form and unify Legendre term destructuring`
 **Parent commit:** `8d72e7e` (prompt 04 complete)
 **Status:** Complete
 
