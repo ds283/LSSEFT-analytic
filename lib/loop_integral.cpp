@@ -143,6 +143,23 @@ void loop_integral::canonicalize_loop_labels()
 
 void loop_integral::canonicalize_Rayleigh_labels()
   {
+    // DELIBERATELY NOT touched by prompt 03 (pre-python-migration-fixes campaign): this method
+    // iterates this->Rayleigh_momenta, a GiNaC::exmap (std::map<ex,ex,ex_is_less>) ordered by
+    // ex::compare(), not by name -- unlike its sibling canonicalize_loop_labels(), which iterates
+    // a name-ordered GiNaC_symbol_set. That asymmetry looks like a determinism bug at first
+    // glance, but reordering this traversal to be name-based would change *which* physical
+    // Rayleigh momentum receives the label R0, R1, ... -- and that label appears directly inside
+    // the emitted kernel content, not just in a container's iteration order. Changing it would
+    // therefore be a content change disguised as a determinism fix, which prompt 03 explicitly
+    // forbids (kernel content must stay bit-identical to baseline/pre-fix as a set).
+    // It is also unnecessary: the five-run measurement in validation/NONDETERMINISM.md (taken
+    // before this prompt touched anything) already found the sorted `value_`/`Wick_` sets --
+    // which embed these R0/R1/... labels -- byte-identical across all five runs, and prompt 03's
+    // own post-fix verification reproduces that. So whatever this->Rayleigh_momenta's ex::compare()
+    // order actually is, it is already process-stable in practice for this codebase (the momenta
+    // reaching this point are created via deterministic, non-hash-driven C++ control flow, not by
+    // iterating an unordered container). See prompts/pre-python-migration-fixes/logs/03-determinism.md
+    // Sec. 3.2 for the full reasoning.
     GiNaC::exmap new_Rayleigh;
     GiNaC::exmap relabel;
 

@@ -28,6 +28,7 @@
 
 
 #include <map>
+#include <vector>
 #include <functional>
 
 #include "shared/defaults.h"
@@ -90,6 +91,13 @@ namespace LSSEFT_impl
 
         //! hash
         size_t hash() const;
+
+        //! print-order-independent canonical sort key, built from the same fields as hash().
+        //! Used to impose a total, process-stable order on kernel_db so that kernel naming and
+        //! emission order do not depend on unordered_map bucket order (which is downstream of
+        //! GiNaC's per-process hash seed) -- see RECONCILIATION.md Sec. 3 and
+        //! validation/NONDETERMINISM.md.
+        std::string canonical_key() const;
 
 
         // FORMATTING
@@ -172,6 +180,11 @@ class LSSEFT
     //! kernel database
     using kernel_db_type = std::unordered_map< LSSEFT_impl::LSSEFT_kernel, std::string >;
 
+    //! print-order-independent ordered view of kernel_db, sorted by
+    //! LSSEFT_impl::LSSEFT_kernel::canonical_key(). Populated once by finalize_kernel_names(),
+    //! which also assigns kernel names from this order -- see the comment there.
+    using ordered_kernel_list = std::vector< std::reference_wrapper<const kernel_db_type::value_type> >;
+
 
     // CONSTRUCTOR, DESTRUCTOR
 
@@ -195,7 +208,7 @@ class LSSEFT
     LSSEFT& add(const Pk_rsd_set& Ps);
 
     //! write output files
-    void write() const;
+    void write();
 
   protected:
 
@@ -204,6 +217,11 @@ class LSSEFT
 
     //! generate a unique kernel name
     std::string make_unique_kernel_name();
+
+    //! sort kernel_db into a process-stable order and assign kernel names from that order.
+    //! Idempotent: a second call is a no-op. Must run before any of the write_* methods below,
+    //! which read kernel names and iterate ordered_kernels rather than kernel_db directly.
+    void finalize_kernel_names();
 
 
     // INTERNAL API
@@ -341,6 +359,13 @@ class LSSEFT
 
     //! kernel database
     kernel_db_type kernel_db;
+
+    //! print-order-independent ordered view of kernel_db; populated once by
+    //! finalize_kernel_names()
+    ordered_kernel_list ordered_kernels;
+
+    //! whether finalize_kernel_names() has already run
+    bool kernels_finalized{false};
 
 
     // TIMESTAMP

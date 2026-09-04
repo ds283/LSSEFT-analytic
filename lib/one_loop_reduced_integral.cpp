@@ -34,6 +34,8 @@
 #include "shared/exceptions.h"
 #include "localizations/messages.h"
 
+#include "utilities/canonical_print.h"
+
 
 one_loop_element::one_loop_element(GiNaC::ex ig_, GiNaC::ex ms_, GiNaC::ex wp_, time_function tm_,
                                    GiNaC_symbol_set vs_, GiNaC::symbol ang_, GiNaC_symbol_set em_)
@@ -371,24 +373,16 @@ one_loop_element_key::one_loop_element_key(const one_loop_element& elt_)
 
 size_t one_loop_element_key::hash() const
   {
-    // print time function to string and hash it
-    std::ostringstream time_string;
-    time_string << this->elt.get_time_function().expand();
-
+    // print time function, measure and Wick product to a print-order-independent canonical
+    // string and hash that, rather than GiNaC's own default-printed form. GiNaC 1.8.10 seeds
+    // its expression hash from a per-process value, so hashing the default-printed string
+    // (the previous approach) inherited that per-process randomness into unordered_map bucket
+    // order -- see RECONCILIATION.md Sec. 3.2 and validation/NONDETERMINISM.md.
     size_t h = 0;
-    hash_impl::hash_combine(h, time_string.str());
 
-    // print measure to string and hash it
-    std::ostringstream measure_string;
-    measure_string << this->elt.get_measure().expand();
-
-    hash_impl::hash_combine(h, measure_string.str());
-
-    // print Wick product to string and hash it
-    std::ostringstream Wick_string;
-    Wick_string << this->elt.get_Wick_product().expand();
-
-    hash_impl::hash_combine(h, Wick_string.str());
+    hash_impl::hash_combine(h, canonical_string(this->elt.get_time_function().expand()));
+    hash_impl::hash_combine(h, canonical_string(this->elt.get_measure().expand()));
+    hash_impl::hash_combine(h, canonical_string(this->elt.get_Wick_product().expand()));
 
     // order integration variables lexically, convert to a string, and hash
     auto ordered_iv = order_symbol_set(this->elt.get_integration_variables());
@@ -417,6 +411,31 @@ size_t one_loop_element_key::hash() const
 bool one_loop_element_key::is_equal(const one_loop_element_key& obj) const
   {
     return this->elt.is_matching_type(obj.elt);
+  }
+
+
+std::string one_loop_element_key::canonical_key() const
+  {
+    // built from the same fields as hash(), but concatenated as a plain string rather than
+    // hashed, so it can be used as a total-order sort key. A NUL separator is used between
+    // fields because it cannot appear inside any of the canonical_string()/name fragments.
+    std::string key;
+
+    key += canonical_string(this->elt.get_time_function().expand());
+    key += '\0';
+    key += canonical_string(this->elt.get_measure().expand());
+    key += '\0';
+    key += canonical_string(this->elt.get_Wick_product().expand());
+    key += '\0';
+
+    auto ordered_iv = order_symbol_set(this->elt.get_integration_variables());
+    for(const auto& sym : ordered_iv) { key += sym.get_name(); key += ','; }
+    key += '\0';
+
+    auto ordered_em = order_symbol_set(this->elt.get_external_momenta());
+    for(const auto& sym : ordered_em) { key += sym.get_name(); key += ','; }
+
+    return key;
   }
 
 

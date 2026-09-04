@@ -28,8 +28,10 @@
 #define LSSEFT_ANALYTIC_PK_RSD_H
 
 
+#include <algorithm>
 #include <iostream>
 #include <set>
+#include <vector>
 
 #include "Pk_one_loop.h"
 
@@ -173,11 +175,24 @@ void Pk_rsd_group::visit(visit_list pattern, VisitorFunction f) const
     auto t6 = pattern.find(6);
     auto t8 = pattern.find(8);
 
+    // one_loop_element_db is an unordered_map, so its iteration (bucket) order depends on
+    // GiNaC's per-process hash seed (see RECONCILIATION.md Sec. 3 and
+    // validation/NONDETERMINISM.md). Visit the elements of each db in a print-order-independent
+    // canonical order instead, so that anything built by summing/concatenating in visit order
+    // (eg. the compute_*_muN bodies in Pk_expressions.cpp) comes out the same way on every run.
     auto visit = [&](const one_loop_element_db& db) -> void
       {
-        for(const auto& item : db)
+        std::vector<const one_loop_element_db::value_type*> ordered;
+        ordered.reserve(db.size());
+        for(const auto& item : db) ordered.push_back(&item);
+
+        std::sort(ordered.begin(), ordered.end(),
+                  [](const one_loop_element_db::value_type* a, const one_loop_element_db::value_type* b) -> bool
+                    { return a->first.canonical_key() < b->first.canonical_key(); });
+
+        for(const auto* item : ordered)
           {
-            const one_loop_element& elt = *item.second;
+            const one_loop_element& elt = *item->second;
             f(elt);
           }
       };

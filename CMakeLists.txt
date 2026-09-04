@@ -56,6 +56,7 @@ ADD_EXECUTABLE(LSSEFT_analytic
   SPT/time_functions.cpp
   utilities/formatter.cpp
   utilities/GiNaC_utils.cpp
+  utilities/canonical_print.cpp
   )
 
 ADD_DEPENDENCIES(LSSEFT_analytic DEPS)
@@ -148,6 +149,8 @@ SET(UTILITIES_FILES
   utilities/formatter.h
   utilities/GiNaC_utils.cpp
   utilities/GiNaC_utils.h
+  utilities/canonical_print.cpp
+  utilities/canonical_print.h
   utilities/hash_combine.h
   utilities/timestamp.h
   )

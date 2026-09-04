@@ -28,12 +28,15 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <algorithm>
+#include <vector>
 
 #include <filesystem>
 
 #include "LSSEFT.h"
 
 #include "utilities/GiNaC_utils.h"
+#include "utilities/canonical_print.h"
 
 #include "shared/exceptions.h"
 #include "localizations/messages.h"
@@ -92,11 +95,12 @@ namespace LSSEFT_impl
         // coalesce measure and integrand, then expand to get in a canonical form
         auto combined = (this->measure * this->integrand).expand();
 
-        // print to string and hash
-        std::ostringstream expr_string;
-        expr_string << combined;
-
-        hash_impl::hash_combine(h, expr_string.str());
+        // hash a print-order-independent canonical string, rather than GiNaC's own
+        // default-printed form. GiNaC 1.8.10 seeds its expression hash from a per-process
+        // value, so hashing the default-printed string (the previous approach) inherited that
+        // per-process randomness into unordered_map bucket order -- see RECONCILIATION.md
+        // Sec. 3.2 and validation/NONDETERMINISM.md.
+        hash_impl::hash_combine(h, canonical_string(combined));
 
         // order integration variables lexically, convert to a string, and hash
         auto ordered_iv = order_symbol_set(this->variables);
@@ -119,6 +123,30 @@ namespace LSSEFT_impl
         hash_impl::hash_combine(h, em_string);
 
         return h;
+      }
+
+
+    std::string LSSEFT_kernel::canonical_key() const
+      {
+        // built from the same fields as hash(), but concatenated as a plain string rather than
+        // hashed, so it can be used as a total-order sort key. A NUL separator is used between
+        // fields because it cannot appear inside any of the canonical_string()/name fragments.
+        auto combined = (this->measure * this->integrand).expand();
+
+        std::string key;
+        key += canonical_string(combined);
+        key += '\0';
+        key += canonical_string(this->WickProduct);
+        key += '\0';
+
+        auto ordered_iv = order_symbol_set(this->variables);
+        for(const auto& sym : ordered_iv) { key += sym.get_name(); key += ','; }
+        key += '\0';
+
+        auto ordered_em = order_symbol_set(this->external_momenta);
+        for(const auto& sym : ordered_em) { key += sym.get_name(); key += ','; }
+
+        return key;
       }
 
 
@@ -507,8 +535,12 @@ void LSSEFT::process_kernels(const Pk_rsd_group& group, LSSEFT_impl::mass_dimens
 
         if(it != this->kernel_db.end()) return;
 
-        // generate a new kernel name
-        auto res = this->kernel_db.insert(std::make_pair(std::move(ker), this->make_unique_kernel_name()));
+        // insert a new kernel record without a name; names are assigned later, from a sorted
+        // order, by finalize_kernel_names(). Naming at insertion time here would number kernels
+        // in unordered_map bucket order, which is downstream of GiNaC's per-process hash seed
+        // (see RECONCILIATION.md Sec. 3 and validation/NONDETERMINISM.md) and so is not
+        // reproducible between processes.
+        auto res = this->kernel_db.insert(std::make_pair(std::move(ker), std::string{}));
         if(!res.second) throw exception(ERROR_BACKEND_KERNEL_INSERT_FAILED, exception_code::backend_error);
       };
 
@@ -518,8 +550,40 @@ void LSSEFT::process_kernels(const Pk_rsd_group& group, LSSEFT_impl::mass_dimens
   }
 
 
-void LSSEFT::write() const
+void LSSEFT::finalize_kernel_names()
   {
+    if(this->kernels_finalized) return;
+
+    // build a vector of iterators into kernel_db, and sort it by the print-order-independent
+    // canonical key. This imposes a total order that does not depend on unordered_map bucket
+    // order, which is downstream of GiNaC's per-process hash seed.
+    std::vector<kernel_db_type::iterator> ordered;
+    ordered.reserve(this->kernel_db.size());
+    for(auto it = this->kernel_db.begin(); it != this->kernel_db.end(); ++it) ordered.push_back(it);
+
+    std::sort(ordered.begin(), ordered.end(),
+              [](const kernel_db_type::iterator& a, const kernel_db_type::iterator& b) -> bool
+                { return a->first.canonical_key() < b->first.canonical_key(); });
+
+    // assign names from the sorted order, and record that order for the emission loops to use
+    this->ordered_kernels.clear();
+    this->ordered_kernels.reserve(ordered.size());
+    for(auto& it : ordered)
+      {
+        it->second = this->make_unique_kernel_name();
+        this->ordered_kernels.push_back(std::cref(*it));
+      }
+
+    this->kernels_finalized = true;
+  }
+
+
+void LSSEFT::write()
+  {
+    // sort kernel_db and assign kernel names from that sorted order. Must happen before
+    // anything below, all of which reads kernel names or iterates ordered_kernels.
+    this->finalize_kernel_names();
+
     // write pipeline ID
     this->write_pipeline_id();
 
@@ -629,8 +693,10 @@ void LSSEFT::write_create() const
     std::ofstream outf{output.string(), std::ios_base::out | std::ios_base::trunc};
     this->write_header(outf);
 
-    for(const auto& record : this->kernel_db)
+    for(const auto& record_ref : this->ordered_kernels)
       {
+        const auto& record = record_ref.get();
+
         const std::string& name = record.second;
 
         // write create statements for all kernels that we require
@@ -680,8 +746,10 @@ void LSSEFT::write_kernel_integrands() const
     auto z_ = sf.make_symbol("z_");
     auto k_ = sf.make_symbol("k_");
 
-    for(const auto& record : this->kernel_db)
+    for(const auto& record_ref : this->ordered_kernels)
       {
+        const auto& record = record_ref.get();
+
         const LSSEFT_kernel& kernel = record.first;
         const std::string& name = record.second;
 
@@ -779,8 +847,10 @@ void LSSEFT::write_container_class() const
 
     // constructor argument list
     unsigned int count = 0;
-    for(const auto& record : this->kernel_db)
+    for(const auto& record_ref : this->ordered_kernels)
       {
+        const auto& record = record_ref.get();
+
         const LSSEFT_kernel& kernel = record.first;
         const std::string& name = record.second;
 
@@ -794,8 +864,10 @@ void LSSEFT::write_container_class() const
 
     // constructor initializer list
     outf << "     : fail(false)";
-    for(const auto& record : this->kernel_db)
+    for(const auto& record_ref : this->ordered_kernels)
       {
+        const auto& record = record_ref.get();
+
         const LSSEFT_kernel& kernel = record.first;
         const std::string& name = record.second;
 
@@ -810,8 +882,10 @@ void LSSEFT::write_container_class() const
     outf << "    //! empty constructor" << '\n';
     outf << "    kernels()" << '\n';
     outf << "     : fail(false)";
-    for(const auto& record : this->kernel_db)
+    for(const auto& record_ref : this->ordered_kernels)
       {
+        const auto& record = record_ref.get();
+
         const LSSEFT_kernel& kernel = record.first;
         const std::string& name = record.second;
 
@@ -837,8 +911,10 @@ void LSSEFT::write_container_class() const
 
     // accessors
     outf << '\n';
-    for(const auto& record : this->kernel_db)
+    for(const auto& record_ref : this->ordered_kernels)
       {
+        const auto& record = record_ref.get();
+
         const LSSEFT_kernel& kernel = record.first;
         const std::string& name = record.second;
 
@@ -856,8 +932,10 @@ void LSSEFT::write_container_class() const
     outf << "    bool fail;" << '\n';
 
     outf << '\n';
-    for(const auto& record : this->kernel_db)
+    for(const auto& record_ref : this->ordered_kernels)
       {
+        const auto& record = record_ref.get();
+
         const LSSEFT_kernel& kernel = record.first;
         const std::string& name = record.second;
 
@@ -877,8 +955,10 @@ void LSSEFT::write_container_class() const
          << "    void serialize(Archive& ar, unsigned int version)" << '\n'
          << "     {" << '\n'
          << "       ar & fail;" << '\n';
-    for(const auto& record : this->kernel_db)
+    for(const auto& record_ref : this->ordered_kernels)
       {
+        const auto& record = record_ref.get();
+
         const LSSEFT_kernel& kernel = record.first;
         const std::string& name = record.second;
 
@@ -904,8 +984,10 @@ void LSSEFT::write_integrate_stmts() const
     outf << "    kernels ker;" << '\n';
     outf << "    bool fail = false;" << '\n';
 
-    for(const auto& record : this->kernel_db)
+    for(const auto& record_ref : this->ordered_kernels)
       {
+        const auto& record = record_ref.get();
+
         const LSSEFT_kernel& kernel = record.first;
         const std::string& name = record.second;
 
@@ -931,8 +1013,10 @@ void LSSEFT::write_kernel_store() const
     std::ofstream outf{output.string(), std::ios_base::out | std::ios_base::trunc};
     this->write_header(outf);
 
-    for(const auto& record : this->kernel_db)
+    for(const auto& record_ref : this->ordered_kernels)
       {
+        const auto& record = record_ref.get();
+
         const LSSEFT_kernel& kernel = record.first;
         const std::string& name = record.second;
 
@@ -952,8 +1036,10 @@ void LSSEFT::write_kernel_missing() const
     std::ofstream outf{output.string(), std::ios_base::out | std::ios_base::trunc};
     this->write_header(outf);
 
-    for(const auto& record : this->kernel_db)
+    for(const auto& record_ref : this->ordered_kernels)
       {
+        const auto& record = record_ref.get();
+
         const LSSEFT_kernel& kernel = record.first;
         const std::string& name = record.second;
 
@@ -963,8 +1049,10 @@ void LSSEFT::write_kernel_missing() const
       }
     outf << '\n';
 
-    for(const auto& record : this->kernel_db)
+    for(const auto& record_ref : this->ordered_kernels)
       {
+        const auto& record = record_ref.get();
+
         const LSSEFT_kernel& kernel = record.first;
         const std::string& name = record.second;
 
@@ -986,8 +1074,10 @@ void LSSEFT::write_kernel_find() const
 
     outf << "kernels ker;" << '\n';
 
-    for(const auto& record : this->kernel_db)
+    for(const auto& record_ref : this->ordered_kernels)
       {
+        const auto& record = record_ref.get();
+
         const LSSEFT_kernel& kernel = record.first;
         const std::string& name = record.second;
 
@@ -1271,8 +1361,10 @@ void LSSEFT::write_kernel_dropidx_stmts() const
     std::ofstream outf{output.string(), std::ios_base::out | std::ios_base::trunc};
     this->write_header(outf);
 
-    for(const auto& record : this->kernel_db)
+    for(const auto& record_ref : this->ordered_kernels)
       {
+        const auto& record = record_ref.get();
+
         const LSSEFT_kernel& kernel = record.first;
         const std::string& name = record.second;
 
@@ -1292,8 +1384,10 @@ void LSSEFT::write_kernel_makeidx_stmts() const
     std::ofstream outf{output.string(), std::ios_base::out | std::ios_base::trunc};
     this->write_header(outf);
 
-    for(const auto& record : this->kernel_db)
+    for(const auto& record_ref : this->ordered_kernels)
       {
+        const auto& record = record_ref.get();
+
         const LSSEFT_kernel& kernel = record.first;
         const std::string& name = record.second;
 

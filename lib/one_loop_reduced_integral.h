@@ -195,6 +195,13 @@ class one_loop_element_key
     //! compare for equality
     bool is_equal(const one_loop_element_key& obj) const;
 
+    //! print-order-independent canonical sort key, built from the same fields as hash().
+    //! Used to impose a total, process-stable order on a one_loop_element_db so that
+    //! traversal order does not depend on unordered_map bucket order (which is downstream
+    //! of GiNaC's per-process hash seed) -- see RECONCILIATION.md Sec. 3 and
+    //! validation/NONDETERMINISM.md.
+    std::string canonical_key() const;
+
 
     // INTERNAL DATA
 

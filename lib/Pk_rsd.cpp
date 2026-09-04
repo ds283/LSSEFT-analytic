@@ -28,6 +28,8 @@
 
 #include "Pk_rsd.h"
 
+#include "utilities/canonical_print.h"
+
 
 Pk_rsd_group::Pk_rsd_group(GiNaC::symbol mu_, filter_list pt_, GiNaC_symbol_set sy_, std::string nm_, bool v)
   : name(std::move(nm_)),
@@ -142,6 +144,14 @@ std::vector< std::vector<time_function> > Pk_rsd_group::get_time_functions() con
 
             if(it == dest.end()) dest.push_back(tm);
           }
+
+        // db is an unordered_map, so the order in which distinct time functions were
+        // discovered above depends on GiNaC's per-process hash seed (see RECONCILIATION.md
+        // Sec. 3 and validation/NONDETERMINISM.md). Sort the result on a print-order-independent
+        // canonical string so callers see a process-stable order regardless.
+        std::sort(dest.begin(), dest.end(),
+                  [](const GiNaC::ex& a, const GiNaC::ex& b) -> bool
+                    { return canonical_string(a.expand()) < canonical_string(b.expand()); });
       };
 
     build(this->mu0, values[0]);
