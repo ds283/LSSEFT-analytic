@@ -3,7 +3,7 @@
 **Prompt:** `prompts/pre-python-migration-fixes/06-rayleigh-zero-diagnosis.md`
 **Executed:** 2026-09-04
 **Branch:** `pre-python-migration-fixes/06-rayleigh-zero-diagnosis`
-**Commit:** *pending* — `Document zero-valued Rayleigh rules; defer the invariant`
+**Commit:** `c88776f` — `Document zero-valued Rayleigh rules; defer the invariant`
 **Parent commit:** `cc982d5` (prompt 05 complete)
 **Status:** Complete (as a diagnosis) / **Blocked** (as a fix) — see verdict below
 
