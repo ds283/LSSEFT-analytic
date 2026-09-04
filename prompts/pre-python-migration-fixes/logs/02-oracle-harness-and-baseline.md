@@ -3,9 +3,20 @@
 **Prompt:** `prompts/pre-python-migration-fixes/02-oracle-harness-and-baseline.md`
 **Executed:** 2026-09-04
 **Branch:** `pre-python-migration-fixes/02-oracle-harness-and-baseline`
-**Commit:** `<SHA>` — `Add differential validation harness and pre-fix baseline`
+**Commit:** `0a0b1e0bd99402ebe4ca90d404bb3a412894669f` — `Add differential validation harness and pre-fix baseline`
+**Tag:** `baseline/pre-fix` (annotated)
 **Parent commit:** `d8d4532f6782427e686c6b218b5a50ee8b8e4313`
 **Status:** Complete
+
+**Commit structure — why two commits, not one.** `README.md` §"Commits" asks for one commit per
+prompt and requires any split to be explained. `0a0b1e0b` is the whole of the substantive work:
+the harness, the baseline, the documents, the status-board update. `c95f6e4` is bookkeeping only —
+it writes `0a0b1e0b`'s own SHA into this log and into the prompt-status table, which a commit
+cannot contain about itself. Nothing in it changes tooling, baseline content or any measurement.
+This is the same split prompt 01 used (`d8d4532` after `2e75f7f`), so the campaign's history stays
+uniform. The annotated tag `baseline/pre-fix` is on the second commit, whose tree differs from the
+first only in these two documentation files, so the tagged code and archived baseline are exactly
+those of `0a0b1e0b`.
 
 ---
 
