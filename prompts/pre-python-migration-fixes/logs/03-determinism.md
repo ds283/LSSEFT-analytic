@@ -3,7 +3,7 @@
 **Prompt:** `prompts/pre-python-migration-fixes/03-determinism.md`
 **Executed:** 2026-09-04
 **Branch:** `pre-python-migration-fixes/03-determinism`
-**Commit:** `TBD` — `Make kernel naming and emission order deterministic` (SHA recorded in a follow-up commit; see the note at the end of §0)
+**Commit:** `cdde71584c1a24d1583c2bf540451b59efd3d0e3` — `Make kernel naming and emission order deterministic`
 **Parent commit:** `6b9a0a1e48ce37a2c821db0bee797ceaff052e2d`
 **Status:** Complete
 
@@ -33,9 +33,10 @@ determinism at *fixed* flags — the configuration every other tool in this camp
 not touch any claim above.
 
 **Note on the commit SHA above:** following the pattern of `d8d4532` (after `2e75f7f`) and
-`6b9a0a1` (after `0a0b1e0b`), this log and `IMPLEMENTATION_STATE.md` are written with the
-substantive commit's own SHA left as `TBD`, because a commit cannot record its own hash. A second,
-purely bookkeeping commit follows immediately afterwards to fill it in.
+`6b9a0a1` (after `0a0b1e0b`), the substantive commit (`cdde7158`) was made first with this log's
+SHA field and `IMPLEMENTATION_STATE.md`'s commit column left blank/`TBD`, because a commit cannot
+record its own hash. This is the immediately-following, purely bookkeeping commit that fills it
+in; it changes no code, tooling or measurement.
 
 ---
 
