@@ -71,6 +71,7 @@ constexpr auto ERROR_EXPONENT_OF_INDEXED_POWER_IS_NOT_INTEGER = "Exponent in pow
 constexpr auto ERROR_EXPONENT_OF_INDEXED_POWER_IS_NOT_EVEN = "Exponent in power of indexed object is not an even integer";
 
 constexpr auto ERROR_ODD_CONTRACTIONS = "Odd number of fields in contraction: result is zero";
+constexpr auto ERROR_ZERO_FIELD_CONTRACTIONS = "Cannot enumerate contractions of an empty field set";
 constexpr auto ERROR_UNKNOWN_VERTEX = "Internal error: unknown vertex when traversing graph";
 constexpr auto ERROR_CONTRACTION_FAILURE = "Internal error: mismatch when constructing possible initial value contractions";
 constexpr auto ERROR_COULD_NOT_ASSIGN_LOOP_MOMENTUM = "Internal error: could not assign loop momentum";

@@ -24,6 +24,9 @@
 // --@@
 //
 
+#include <cassert>
+#include <limits>
+
 #include "contractions.h"
 
 
@@ -62,6 +65,14 @@ namespace detail
 
     size_t double_factorial(size_t N)
       {
+        // N is only ever num-1 for an even num >= 2 (see enumerate_contractions(), the only
+        // caller), so N is always odd and finite; the case that would make N underflow to
+        // SIZE_MAX (num == 0) is rejected before this function is called. Assert it here too,
+        // defensively, in case a future caller is added that does not go through that guard --
+        // a hang from an ~SIZE_MAX/2-iteration loop is a much worse failure mode than an assert.
+        assert(N != std::numeric_limits<size_t>::max()
+               && "double_factorial: argument is SIZE_MAX -- caller likely underflowed num - 1 from num == 0");
+
         size_t x = 1;
         for(size_t i = N; i > 1; i -= 2)
           {
@@ -76,6 +87,13 @@ namespace detail
     contractions::enumerate_contractions(size_t num, const iv_list& ivs) const
       {
         using detail::graph;
+
+        // num == 0 means every cluster was empty. It cannot currently happen (the constructor
+        // only checks that num is even, and zero is even), but double_factorial(num-1) would
+        // underflow to double_factorial(SIZE_MAX) -- a loop of ~2^63 iterations, i.e. a hang,
+        // not a crash. Reject it here with a clear exception instead.
+        if(num == 0)
+          throw exception(ERROR_ZERO_FIELD_CONTRACTIONS, exception_code::contraction_error);
 
         // allocate a unique_ptr for the contraction set
         auto ctrs = std::make_unique<contraction_set>();

@@ -298,6 +298,21 @@ class one_loop_reduced_integral
     //! apply one-loop reduction to a term with one Rayleigh momentum
     void one_loop_reduce_one_Rayleigh(const GiNaC::ex& term, const GiNaC::symbol& R);
 
+    //! list of Legendre factors extracted from a product by extract_Legendre_factors(): for each,
+    //! the momentum symbol paired with the reduction variable, and the polynomial order. A factor
+    //! LegP(n, var, p)**m contributes m entries of (p, n), not one opaque power
+    using Legendre_list = std::vector< std::pair<GiNaC::symbol, unsigned int> >;
+
+    //! shared factor-enumeration helper for the three Legendre-shape dispatch sites (integrate_Legendre,
+    //! above, and both overloads of apply_Legendre_orthogonality, below). term must already be one of the
+    //! five shapes integrate_Legendre recognises (mul, numeric, power, symbol, function). Returns the
+    //! product of every factor that is not a LegP(., ., .) polynomial paired with var; appends one entry
+    //! to partner_q per Legendre factor that does pair with var, unfolding LegP(n,var,p)**m into m entries
+    //! so that the multiplicity is never hidden inside an opaque power (this was defect (d): previously
+    //! LegP(n,q,k)**2 was either swept whole into the non-Legendre remainder, or -- where there was no
+    //! shape check at all -- destructured into base and exponent as if they were independent factors)
+    static GiNaC::ex extract_Legendre_factors(const GiNaC::ex& term, const GiNaC::symbol& var, Legendre_list& partner_q);
+
     //! generic function to walk an expanded expression, applying a function to integrate Legendre products
     template <typename VisitorFunction>
     GiNaC::ex integrate_Legendre(const GiNaC::ex& term, const GiNaC::symbol& q, VisitorFunction f);
@@ -378,7 +393,14 @@ GiNaC::ex one_loop_reduced_integral::integrate_Legendre(const GiNaC::ex& term, c
   {
     auto term_ex = term.expand();
 
-    if(GiNaC::is_a<GiNaC::mul>(term_ex) || GiNaC::is_a<GiNaC::numeric>(term_ex) || GiNaC::is_a<GiNaC::power>(term_ex))
+    // mul/numeric/power/symbol/function are all forwarded to f() as a single term: f() (one of
+    // the apply_Legendre_orthogonality overloads) uses extract_Legendre_factors() to enumerate
+    // the factors of whichever of these five shapes it is given, so none of them needs special
+    // treatment here. A bare symbol or function used to be returned unintegrated instead (no 4pi
+    // normalisation, and no zeroing by orthogonality for a bare LegP(n,q,k) with n > 0) -- that
+    // silent pass-through is what this fix removes.
+    if(GiNaC::is_a<GiNaC::mul>(term_ex) || GiNaC::is_a<GiNaC::numeric>(term_ex) || GiNaC::is_a<GiNaC::power>(term_ex)
+       || GiNaC::is_a<GiNaC::symbol>(term_ex) || GiNaC::is_a<GiNaC::function>(term_ex))
       {
         return f(term_ex, q);
       }
@@ -392,8 +414,6 @@ GiNaC::ex one_loop_reduced_integral::integrate_Legendre(const GiNaC::ex& term, c
           }
         return temp;
       }
-
-    if(GiNaC::is_a<GiNaC::symbol>(term_ex) || GiNaC::is_a<GiNaC::function>(term_ex)) return term;
 
     std::cerr << term_ex << '\n';
     throw exception(ERROR_BADLY_FORMED_TOP_LEVEL_LEGENDRE_SUM, exception_code::loop_transformation_error);

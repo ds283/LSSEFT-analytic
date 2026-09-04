@@ -520,6 +520,20 @@ bool is_rational(const GiNaC::ex& expr)
 GiNaC::exvector to_exvector(const GiNaC::ex& expr)
   {
     GiNaC::exvector vec;
+
+    // a non-product is a product of one factor, mirroring SymPy's Mul.make_args(). Previously
+    // this function assumed its argument was always a GiNaC::mul and decomposed it via
+    // expr.nops() unconditionally; that is wrong for every other class of expression --
+    // nops() == 0 for a numeric or symbol drops the factor entirely (an empty vector), and
+    // nops() == 2 for a power destructures it into (base, exponent) as if they were two
+    // independent multiplicative factors. Every existing caller passes only a confirmed
+    // GiNaC::mul, so this extension is behaviour-preserving for them.
+    if(!GiNaC::is_a<GiNaC::mul>(expr))
+      {
+        vec.push_back(expr);
+        return vec;
+      }
+
     vec.reserve(expr.nops());
 
     for(size_t i = 0; i < expr.nops(); ++i)

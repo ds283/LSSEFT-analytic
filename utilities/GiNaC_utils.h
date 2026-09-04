@@ -79,7 +79,8 @@ GiNaC::ex simplify_index(const GiNaC::ex& expr, const GiNaC::exmap& Rayleigh_lis
 //! indexed quantities
 bool is_rational(const GiNaC::ex& expr);
 
-//! convert a product to an expression vector
+//! convert a product to an expression vector; a non-product is returned as a one-element
+//! vector containing the whole expression (mirrors SymPy's Mul.make_args())
 GiNaC::exvector to_exvector(const GiNaC::ex& expr);
 
 //! order a set of symbols

@@ -685,40 +685,75 @@ void one_loop_reduced_integral::one_loop_reduce_one_Rayleigh(const GiNaC::ex& te
   }
 
 
-GiNaC::ex one_loop_reduced_integral::apply_Legendre_orthogonality(const GiNaC::ex& expr, const GiNaC::symbol& q)
+GiNaC::ex
+one_loop_reduced_integral::extract_Legendre_factors(const GiNaC::ex& term, const GiNaC::symbol& var,
+                                                    Legendre_list& partner_q)
   {
     GiNaC::ex temp{1};
 
-    using Legendre_list = std::vector< std::pair< GiNaC::symbol, unsigned int > >;
-    Legendre_list partner_q;
-
-    if(GiNaC::is_a<GiNaC::numeric>(expr) || GiNaC::is_a<GiNaC::power>(expr)) temp = expr;
-    else if(GiNaC::is_a<GiNaC::mul>(expr))
+    // term is guaranteed by the caller to be one of the five shapes integrate_Legendre recognises:
+    // mul, numeric, power, symbol, function. to_exvector() reduces all five to a uniform factor
+    // list -- a single-element list containing term itself, unless term is a mul, in which case
+    // it is the list of term's own factors. This is the single shared enumeration step used by
+    // both apply_Legendre_orthogonality overloads.
+    for(const auto& factor : to_exvector(term))
       {
-        // run through each factor in the expression
-        // if it is a Legendre polynomial involving q then record the momentum it occurs with, and its order
-        for(size_t i = 0; i < expr.nops(); ++i)
+        // does this factor carry a bare LegP(n, ., .), or a positive-integer power of one?
+        // LegP(n, ., .)**m must be seen as m separate order-n factors, not one opaque power --
+        // that unfolding happens here, once, rather than in either caller
+        GiNaC::ex leg_candidate = factor;
+        unsigned int multiplicity = 1;
+
+        if(GiNaC::is_a<GiNaC::power>(factor))
           {
-            const GiNaC::ex& term = expr.op(i);
+            const auto& exponent = factor.op(1);
+            if(!GiNaC::is_a<GiNaC::numeric>(exponent) || !GiNaC::ex_to<GiNaC::numeric>(exponent).is_pos_integer())
+              {
+                // not a shape we can safely unfold (e.g. R**-2): leave the whole power as a
+                // single opaque factor, exactly as for any other non-Legendre factor below
+                temp *= factor;
+                continue;
+              }
 
-            if(!GiNaC::is_a<GiNaC::function>(term)) { temp *= term; continue; }
-
-            const auto& fn = GiNaC::ex_to<GiNaC::function>(term);
-            if(fn.get_name() != "LegP") { temp *= term; continue; }
-
-            auto n = static_cast<unsigned int>(GiNaC::ex_to<GiNaC::numeric>(fn.op(0)).to_int());
-            auto p1 = GiNaC::ex_to<GiNaC::symbol>(fn.op(1));
-            auto p2 = GiNaC::ex_to<GiNaC::symbol>(fn.op(2));
-
-            if(p1 == q) { partner_q.emplace_back(p2, n); continue; }
-            if(p2 == q) { partner_q.emplace_back(p1, n); continue; }
-
-            // not a Legendre polynomial involving q, so shift into temp
-            temp *= term;
+            leg_candidate = factor.op(0);
+            multiplicity = static_cast<unsigned int>(GiNaC::ex_to<GiNaC::numeric>(exponent).to_int());
           }
+
+        if(!GiNaC::is_a<GiNaC::function>(leg_candidate) || GiNaC::ex_to<GiNaC::function>(leg_candidate).get_name() != "LegP")
+          {
+            temp *= factor;
+            continue;
+          }
+
+        const auto& fn = GiNaC::ex_to<GiNaC::function>(leg_candidate);
+        auto n = static_cast<unsigned int>(GiNaC::ex_to<GiNaC::numeric>(fn.op(0)).to_int());
+        auto p1 = GiNaC::ex_to<GiNaC::symbol>(fn.op(1));
+        auto p2 = GiNaC::ex_to<GiNaC::symbol>(fn.op(2));
+
+        if(!(p1 == var) && !(p2 == var))
+          {
+            // a Legendre polynomial that does not involve var at all: not something the
+            // orthogonality reduction can use, so it stays in the non-Legendre remainder
+            temp *= factor;
+            continue;
+          }
+
+        const GiNaC::symbol& partner = (p1 == var) ? p2 : p1;
+        for(unsigned int i = 0; i < multiplicity; ++i) partner_q.emplace_back(partner, n);
       }
-    else
+
+    return temp;
+  }
+
+
+GiNaC::ex one_loop_reduced_integral::apply_Legendre_orthogonality(const GiNaC::ex& expr, const GiNaC::symbol& q)
+  {
+    if(!(GiNaC::is_a<GiNaC::mul>(expr) || GiNaC::is_a<GiNaC::numeric>(expr) || GiNaC::is_a<GiNaC::power>(expr)
+         || GiNaC::is_a<GiNaC::symbol>(expr) || GiNaC::is_a<GiNaC::function>(expr)))
       throw exception(ERROR_BADLY_FORMED_LEGENDRE_SUM_TERM, exception_code::loop_transformation_error);
+
+    Legendre_list partner_q;
+    GiNaC::ex temp = extract_Legendre_factors(expr, q, partner_q);
 
     // if no Legendre polynomials, equivalent to LegP(0, x)
     if(partner_q.empty())
@@ -759,25 +794,24 @@ GiNaC::numeric A(unsigned int r)
   {
     if(A_cache.find(r) != A_cache.end()) return A_cache[r];
 
-    unsigned int numerator = 1;
-    unsigned int count = 2*r - 1;
+    // A(r) = (2r-1)!! / r! = C(2r,r) / 2^r. The double-factorial/factorial form computed the
+    // numerator and denominator separately in unsigned int, which overflows silently from
+    // r = 11 (numerator) and r = 13 (denominator), and which also relied on an accidental
+    // wraparound to return the correct answer at r = 0 (2*0-1 wraps to SIZE_MAX-scale
+    // unsigned int, looping ~2^32 times). The closed form below is exact at every r,
+    // including r = 0 (C(0,0)/2^0 = 1), with no special-casing and no loop.
+    //
+    // GiNaC::binomial(const GiNaC::numeric&, const GiNaC::numeric&) is the exact-rational
+    // overload declared in <ginac/numeric.h>; it is selected here (rather than the symbolic
+    // GiNaC::binomial(const GiNaC::ex&, const GiNaC::ex&) from DECLARE_FUNCTION_2P) because the
+    // arguments are constructed as GiNaC::numeric, which is an exact match for that overload
+    // and requires no basic->ex conversion. Likewise GiNaC::pow(const GiNaC::numeric&, const
+    // GiNaC::numeric&) is the exact-rational overload. Both were confirmed to return
+    // GiNaC::numeric (not an unevaluated GiNaC::ex) by a standalone compile check.
+    GiNaC::numeric two_r{2*r};
+    GiNaC::numeric r_num{r};
 
-    while(count > 1)
-      {
-        numerator *= count;
-        count -= 2;
-      }
-
-    unsigned int denominator = 1;
-    count = r;
-
-    while(count > 1)
-      {
-        denominator *= count;
-        count -= 1;
-      }
-
-    A_cache[r] = GiNaC::numeric{numerator} / GiNaC::numeric{denominator};
+    A_cache[r] = GiNaC::binomial(two_r, r_num) / GiNaC::pow(GiNaC::numeric{2}, r_num);
     return A_cache[r];
   }
 
@@ -841,29 +875,12 @@ GiNaC::ex
 one_loop_reduced_integral::apply_Legendre_orthogonality(const GiNaC::ex& expr, const GiNaC::symbol& L, const GiNaC::numeric& Lcoeff,
                                                         const GiNaC::symbol& k, const GiNaC::numeric& kcoeff, const GiNaC::symbol& R)
   {
-    GiNaC::ex temp{1};
+    if(!(GiNaC::is_a<GiNaC::mul>(expr) || GiNaC::is_a<GiNaC::numeric>(expr) || GiNaC::is_a<GiNaC::power>(expr)
+         || GiNaC::is_a<GiNaC::symbol>(expr) || GiNaC::is_a<GiNaC::function>(expr)))
+      throw exception(ERROR_BADLY_FORMED_LEGENDRE_SUM_TERM, exception_code::loop_transformation_error);
 
-    using Legendre_list = std::vector< std::pair< GiNaC::symbol, unsigned int > >;
     Legendre_list partner_q;
-
-    for(size_t i = 0; i < expr.nops(); ++i)
-      {
-        const auto term = expr.op(i);
-        if(!GiNaC::is_a<GiNaC::function>(term)) { temp *= term; continue; }
-
-        const auto& fn = GiNaC::ex_to<GiNaC::function>(term);
-        if(fn.get_name() != "LegP") { temp *= term; continue; }
-
-        auto n = static_cast<unsigned int>(GiNaC::ex_to<GiNaC::numeric>(fn.op(0)).to_int());
-        auto p1 = GiNaC::ex_to<GiNaC::symbol>(fn.op(1));
-        auto p2 = GiNaC::ex_to<GiNaC::symbol>(fn.op(2));
-
-        if(p1 == L) { partner_q.emplace_back(p2, n); continue; }
-        if(p2 == L) { partner_q.emplace_back(p1, n); continue; }
-
-        // not a Legendre polynomial involving L, so move on
-        temp *= term;
-      }
+    GiNaC::ex temp = extract_Legendre_factors(expr, L, partner_q);
 
     // if no Legendre polynomials, only the LegP(0, k.L) term in the sum contributes
     if(partner_q.empty()) return NeumannAdamsSum(L, Lcoeff, k, kcoeff, 0, k, 0, R) * temp;
