@@ -28,11 +28,8 @@
 #define LSSEFT_ANALYTIC_TIMING_INSTRUMENT_H
 
 
+#include <chrono>
 #include <string>
-
-#include "timing_instrument.h"
-
-#include "boost/timer/timer.hpp"
 
 
 class timing_instrument
@@ -53,8 +50,11 @@ class timing_instrument
 
   private:
 
-    //! timer
-    boost::timer::cpu_timer timer;
+    //! wall-clock start time, replacing Boost's timer::cpu_timer (only .wall was ever used)
+    std::chrono::steady_clock::time_point start_time{std::chrono::steady_clock::now()};
+
+    //! wall-clock stop time
+    std::chrono::steady_clock::time_point stop_time;
 
     //! cache name
     const std::string name;

@@ -26,95 +26,124 @@
 
 
 #include <iostream>
+#include <string_view>
 
 #include "argument_cache.h"
 #include "switches.h"
 
 #include "shared/common.h"
 
-#include "boost/program_options.hpp"
+
+namespace
+  {
+
+    //! print the fixed usage/help text listing every switch in switches.h.
+    //! Does not attempt to reproduce Boost's program_options table formatting byte-for-byte;
+    //! it lists the same switches with the same HELP_* strings (see log for prompt 01).
+    void print_help()
+      {
+        std::cout << "Generic:\n"
+                   << "  --" << SWITCH_HELP << "\t\t\t" << HELP_HELP << '\n'
+                   << "  --" << SWITCH_VERSION << "\t\t\t" << HELP_VERSION << '\n'
+                   << '\n'
+                   << "Expression handling:\n"
+                   << "  --" << SWITCH_AUTO_SYMMETRIZE << " / --" << SWITCH_NO_AUTO_SYMMETRIZE << "\t" << HELP_AUTO_SYMMETRIZE << '\n'
+                   << "  --" << SWITCH_22_SYMMETRIZE << " / --" << SWITCH_NO_22_SYMMETRIZE << "\t" << HELP_22_SYMMETRIZE << '\n'
+                   << '\n'
+                   << "Backend control:\n"
+                   << "  --" << SWITCH_COUNTERTERMS << " / --" << SWITCH_NO_COUNTERTERMS << "\t" << HELP_COUNTERTERMS << '\n'
+                   << "  --" << SWITCH_OUTPUT_LONG << " <path>, -o <path>\t" << HELP_OUTPUT << '\n'
+                   << "  --" << SWITCH_MATHEMATICA_OUTPUT << " <path>\t" << HELP_MATHEMATICA_OUTPUT << '\n';
+      }
+
+    [[noreturn]] void unrecognized_option(const std::string& arg)
+      {
+        std::cerr << PROGRAM_NAME << ": unrecognized option '" << arg << "'\n";
+        exit(EXIT_FAILURE);
+      }
+
+    [[noreturn]] void missing_value(const std::string& arg)
+      {
+        std::cerr << PROGRAM_NAME << ": option '" << arg << "' requires a value\n";
+        exit(EXIT_FAILURE);
+      }
+
+    std::filesystem::path make_absolute(const std::string& value)
+      {
+        std::filesystem::path outpath = value;
+        if(!outpath.is_absolute()) outpath = std::filesystem::absolute(outpath);
+        return outpath;
+      }
+
+  }   // unnamed namespace
 
 
 argument_cache::argument_cache(int argc, char**& argv)
   {
-    // set up BOOST::program_options descriptors for command-line arguments
-    boost::program_options::options_description generic{"Generic"};
-    generic.add_options()
-      (SWITCH_HELP, HELP_HELP)
-      (SWITCH_VERSION, HELP_VERSION)
-      ;
-
-    boost::program_options::options_description expressions{"Expression handling"};
-    expressions.add_options()
-      (SWITCH_AUTO_SYMMETRIZE, HELP_AUTO_SYMMETRIZE)
-      (SWITCH_22_SYMMETRIZE, HELP_22_SYMMETRIZE)
-      ;
-
-    boost::program_options::options_description backend{"Backend control"};
-    backend.add_options()
-      (SWITCH_COUNTERTERMS, HELP_COUNTERTERMS)
-      (SWITCH_OUTPUT, boost::program_options::value<std::string>(), HELP_OUTPUT)
-      (SWITCH_MATHEMATICA_OUTPUT, boost::program_options::value<std::string>(), HELP_MATHEMATICA_OUTPUT)
-      ;
-
-    boost::program_options::options_description backend_hidden{"Hidden backed control options"};
-    backend_hidden.add_options()
-      (SWITCH_NO_COUNTERTERMS, "")
-      ;
-
-    boost::program_options::options_description expressions_hidden{"Hidden expression options"};
-    expressions_hidden.add_options()
-      (SWITCH_NO_AUTO_SYMMETRIZE, "")
-      (SWITCH_NO_22_SYMMETRIZE, "")
-      ;
-
-    boost::program_options::options_description cmdline_options;
-    cmdline_options.add(generic).add(expressions).add(expressions_hidden).add(backend);
-
-    boost::program_options::options_description output_options;
-    output_options.add(generic).add(expressions).add(backend);
-
-    boost::program_options::variables_map option_map;
-    boost::program_options::store(boost::program_options::parse_command_line(argc, argv, cmdline_options), option_map);
-    boost::program_options::notify(option_map);
-
+    // hand-rolled argv scan, replacing Boost's program_options.
+    //
+    // Deliberate narrowings relative to program_options, both recorded in the log for prompt 01:
+    //   - long options must be typed in full; program_options' unambiguous-prefix abbreviation
+    //     guessing (e.g. "--counter" matching "--counterterms") is not reimplemented.
+    //   - "-o<path>" (short option with attached value) is not supported; only "-o <path>" is.
     bool emitted_version = false;
 
-    if(option_map.count(SWITCH_VERSION))
+    for(int i = 1; i < argc; ++i)
       {
-        std::cout << PROGRAM_NAME << " " << PROGRAM_VERSION << " " << PROGRAM_COPYRIGHT << '\n';
-        emitted_version = true;
-      }
+        std::string arg{argv[i]};
 
-    if(option_map.count(SWITCH_HELP))
-      {
-        if(!emitted_version) std::cout << PROGRAM_NAME << " " << PROGRAM_VERSION << " " << PROGRAM_COPYRIGHT << '\n';
-        std::cout << output_options << '\n';
-        exit(EXIT_SUCCESS);
-      }
+        if(arg == "--help")
+          {
+            if(!emitted_version) std::cout << PROGRAM_NAME << " " << PROGRAM_VERSION << " " << PROGRAM_COPYRIGHT << '\n';
+            print_help();
+            exit(EXIT_SUCCESS);
+          }
 
-    if(option_map.count(SWITCH_AUTO_SYMMETRIZE))    this->auto_symmetrize = true;
-    if(option_map.count(SWITCH_NO_AUTO_SYMMETRIZE)) this->auto_symmetrize = false;
-    if(option_map.count(SWITCH_22_SYMMETRIZE))      this->symmetrize_22 = true;
-    if(option_map.count(SWITCH_NO_22_SYMMETRIZE))   this->symmetrize_22 = false;
+        if(arg == "--version")
+          {
+            std::cout << PROGRAM_NAME << " " << PROGRAM_VERSION << " " << PROGRAM_COPYRIGHT << '\n';
+            emitted_version = true;
+            continue;
+          }
 
-    if(option_map.count(SWITCH_COUNTERTERMS))       this->counterterms = true;
-    if(option_map.count(SWITCH_NO_COUNTERTERMS))    this->counterterms = false;
+        if(arg == "--auto-symmetrize")    { this->auto_symmetrize = true;  continue; }
+        if(arg == "--no-auto-symmetrize") { this->auto_symmetrize = false; continue; }
+        if(arg == "--symmetrize-22")      { this->symmetrize_22 = true;    continue; }
+        if(arg == "--no-symmetrize-22")   { this->symmetrize_22 = false;   continue; }
+        if(arg == "--counterterms")       { this->counterterms = true;     continue; }
+        if(arg == "--no-counterterms")    { this->counterterms = false;    continue; }
 
-    if(option_map.count(SWITCH_OUTPUT_LONG))
-      {
-        boost::filesystem::path outpath = option_map[SWITCH_OUTPUT_LONG].as<std::string>();
-        if(!outpath.is_absolute()) outpath = boost::filesystem::absolute(outpath);
+        // "--output=<path>" form
+        if(arg.rfind("--output=", 0) == 0)
+          {
+            this->output_root = make_absolute(arg.substr(std::string_view{"--output="}.size()));
+            continue;
+          }
 
-        this->output_root = std::move(outpath);
-      }
+        // "--mathematica-output=<path>" form
+        if(arg.rfind("--mathematica-output=", 0) == 0)
+          {
+            this->output_mma = make_absolute(arg.substr(std::string_view{"--mathematica-output="}.size()));
+            continue;
+          }
 
-    if(option_map.count(SWITCH_MATHEMATICA_OUTPUT))
-      {
-        boost::filesystem::path outpath = option_map[SWITCH_MATHEMATICA_OUTPUT].as<std::string>();
-        if(!outpath.is_absolute()) outpath = boost::filesystem::absolute(outpath);
+        // "--output <path>" / "-o <path>" form
+        if(arg == "--output" || arg == "-o")
+          {
+            if(i + 1 >= argc) missing_value(arg);
+            this->output_root = make_absolute(argv[++i]);
+            continue;
+          }
 
-        this->output_mma = std::move(outpath);
+        // "--mathematica-output <path>" form
+        if(arg == "--mathematica-output")
+          {
+            if(i + 1 >= argc) missing_value(arg);
+            this->output_mma = make_absolute(argv[++i]);
+            continue;
+          }
+
+        unrecognized_option(arg);
       }
   }
 
@@ -131,7 +160,7 @@ bool argument_cache::get_symmetrize_22() const
   }
 
 
-const boost::filesystem::path& argument_cache::get_output_path() const
+const std::filesystem::path& argument_cache::get_output_path() const
   {
     return this->output_root;
   }
@@ -143,7 +172,7 @@ bool argument_cache::get_counterterms() const
   }
 
 
-const boost::filesystem::path& argument_cache::get_Mathematica_output() const
+const std::filesystem::path& argument_cache::get_Mathematica_output() const
   {
     return this->output_mma;
   }

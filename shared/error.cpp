@@ -24,19 +24,20 @@
 // --@@
 //
 
+#include <iostream>
+
 #include "error.h"
 #include "ansi_colour_codes.h"
 
 #include "localizations/messages.h"
 
-#include "boost/date_time.hpp"
+#include "utilities/timestamp.h"
 
 
 void error_handler::error(std::string msg)
   {
-    boost::posix_time::ptime now = boost::posix_time::second_clock::universal_time();
-    std::string nowstr = boost::posix_time::to_simple_string(now);
-    
+    std::string nowstr = utc_timestamp{}.to_string();
+
     std::cout << ANSI_BOLD_RED;
     std::cout << "lsseft-analytic [" << nowstr << "]: " << msg << '\n';
     std::cout << ANSI_NORMAL;
@@ -45,9 +46,8 @@ void error_handler::error(std::string msg)
 
 void error_handler::warn(std::string msg)
   {
-    boost::posix_time::ptime now = boost::posix_time::second_clock::universal_time();
-    std::string nowstr = boost::posix_time::to_simple_string(now);
-    
+    std::string nowstr = utc_timestamp{}.to_string();
+
     std::cout << ANSI_BOLD_MAGENTA;
     std::cout << WARNING_LABEL << " ";
     std::cout << ANSI_NORMAL;
@@ -57,8 +57,7 @@ void error_handler::warn(std::string msg)
 
 void error_handler::info(std::string msg)
   {
-    boost::posix_time::ptime now = boost::posix_time::second_clock::universal_time();
-    std::string nowstr = boost::posix_time::to_simple_string(now);
+    std::string nowstr = utc_timestamp{}.to_string();
 
     std::cout << "lsseft-analytic [" << nowstr << "]: " << msg << '\n';
   }
@@ -66,9 +65,8 @@ void error_handler::info(std::string msg)
 
 void error_handler::announce(std::string msg)
   {
-    boost::posix_time::ptime now = boost::posix_time::second_clock::universal_time();
-    std::string nowstr = boost::posix_time::to_simple_string(now);
-    
+    std::string nowstr = utc_timestamp{}.to_string();
+
     std::cout << ANSI_BOLD_GREEN;
     std::cout << "lsseft-analytic [" << nowstr << "]: " << msg << '\n';
     std::cout << ANSI_NORMAL;

@@ -29,8 +29,7 @@
 
 
 #include <map>
-
-#include "boost/optional.hpp"
+#include <optional>
 
 #include "shared/defaults.h"
 #include "utilities/GiNaC_utils.h"
@@ -54,7 +53,7 @@ class symbol_factory
   protected:
     
     //! type for database key
-    using key_type = std::pair< std::string, boost::optional<std::string> >;
+    using key_type = std::pair< std::string, std::optional<std::string> >;
     
     //! type for symbol database
     using symbol_db = std::map< key_type, GiNaC::symbol >;
@@ -79,7 +78,7 @@ class symbol_factory
     const GiNaC::symbol& get_z() const;
 
     //! manufacture a GiNaC symbol corresponding to a given name
-    const GiNaC::symbol& make_symbol(std::string name, boost::optional<std::string> latex_name = boost::none);
+    const GiNaC::symbol& make_symbol(std::string name, std::optional<std::string> latex_name = std::nullopt);
     
     
     // FACTORY FUNCTIONS
@@ -87,13 +86,13 @@ class symbol_factory
   public:
     
     //! make a vector object from a name
-    vector make_vector(std::string name, boost::optional<std::string> latex_name = boost::none);
-    
+    vector make_vector(std::string name, std::optional<std::string> latex_name = std::nullopt);
+
     //! make a vector object from an existing symbol
     vector make_vector(const GiNaC::symbol& s);
-    
+
     //! make an initial value object
-    initial_value make_initial_value(std::string name, boost::optional<std::string> latex_name = boost::none);
+    initial_value make_initial_value(std::string name, std::optional<std::string> latex_name = std::nullopt);
     
     //! make an initial value object from an existing symbol
     initial_value make_initial_value(const GiNaC::symbol& s);

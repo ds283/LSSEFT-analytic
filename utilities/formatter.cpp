@@ -31,15 +31,15 @@
 #include "localizations/messages.h"
 
 
-std::string format_time(boost::timer::nanosecond_type time, unsigned int precision)
+std::string format_time(nanosecond_type time, unsigned int precision)
   {
     std::ostringstream out;
 
-    constexpr boost::timer::nanosecond_type mu_sec = 1000;
-    constexpr boost::timer::nanosecond_type m_sec  = 1000*mu_sec;
-    constexpr boost::timer::nanosecond_type sec    = 1000*m_sec;
-    constexpr boost::timer::nanosecond_type minute = 60*sec;
-    constexpr boost::timer::nanosecond_type hour   = 60*minute;
+    constexpr nanosecond_type mu_sec = 1000;
+    constexpr nanosecond_type m_sec  = 1000*mu_sec;
+    constexpr nanosecond_type sec    = 1000*m_sec;
+    constexpr nanosecond_type minute = 60*sec;
+    constexpr nanosecond_type hour   = 60*minute;
 
     if(time > hour)
       {

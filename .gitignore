@@ -1,0 +1,8 @@
+# out-of-tree build directories produced by validation/build.sh (and ad hoc local builds)
+/build-validation/
+/build-verify/
+
+# output trees produced by validation/run.sh
+/validation/out/
+
+.DS_Store

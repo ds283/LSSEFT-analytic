@@ -34,8 +34,9 @@
 
 #include "lib/Pk_rsd.h"
 
-#include "boost/filesystem/operations.hpp"
-#include "boost/date_time/posix_time/ptime.hpp"
+#include <filesystem>
+
+#include "utilities/timestamp.h"
 
 
 using Pk_rsd_set = std::map< std::string, std::reference_wrapper<Pk_rsd> >;
@@ -177,7 +178,7 @@ class LSSEFT
   public:
 
     //! constructor
-    LSSEFT(boost::filesystem::path rt_, service_locator& lc_);
+    LSSEFT(std::filesystem::path rt_, service_locator& lc_);
 
     //! destructor
     ~LSSEFT() = default;
@@ -210,7 +211,7 @@ class LSSEFT
   protected:
 
     //! construct an output file name from the cached root
-    boost::filesystem::path make_output_path(const boost::filesystem::path& leaf) const;
+    std::filesystem::path make_output_path(const std::filesystem::path& leaf) const;
 
 
     // SQL
@@ -324,7 +325,7 @@ class LSSEFT
     // CONFIGURATION DATA
 
     //! output root
-    boost::filesystem::path root;
+    std::filesystem::path root;
 
     //! current kernel number
     unsigned int kernel_count{0};
@@ -344,7 +345,7 @@ class LSSEFT
 
     // TIMESTAMP
 
-    boost::posix_time::ptime now;
+    utc_timestamp now;
 
     //! string version
     std::string now_string;

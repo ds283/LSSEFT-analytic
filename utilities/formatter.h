@@ -27,10 +27,14 @@
 #define LSSEFT_ANALYTIC_FORMATTER_H
 
 
-#include "boost/timer/timer.hpp"
+#include <cstdint>
+#include <string>
 
 
-std::string format_time(boost::timer::nanosecond_type time, unsigned int precision=3);
+//! nanosecond-resolution duration type, replacing Boost's timer::nanosecond_type
+using nanosecond_type = std::uint64_t;
+
+std::string format_time(nanosecond_type time, unsigned int precision=3);
 
 
 #endif //LSSEFT_ANALYTIC_FORMATTER_H

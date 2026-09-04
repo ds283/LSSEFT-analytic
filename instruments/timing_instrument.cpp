@@ -41,12 +41,13 @@ timing_instrument::timing_instrument(std::string name_)
 
 timing_instrument::~timing_instrument()
   {
-    this->timer.stop();
+    this->stop_time = std::chrono::steady_clock::now();
 
     error_handler err;
     std::ostringstream msg;
 
-    msg << name << ": " << format_time(this->timer.elapsed().wall);
+    auto elapsed_ns = std::chrono::duration_cast<std::chrono::nanoseconds>(this->stop_time - this->start_time).count();
+    msg << name << ": " << format_time(static_cast<nanosecond_type>(elapsed_ns));
 
     err.info(msg.str());
   }

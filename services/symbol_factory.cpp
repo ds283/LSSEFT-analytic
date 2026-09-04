@@ -41,7 +41,7 @@ symbol_factory::symbol_factory(unsigned int d_)
   }
 
 
-const GiNaC::symbol& symbol_factory::make_symbol(std::string name, boost::optional<std::string> latex_name)
+const GiNaC::symbol& symbol_factory::make_symbol(std::string name, std::optional<std::string> latex_name)
   {
     // search for existing definition of this symbol
     auto t = this->symbols.find(std::make_pair(name, latex_name));
@@ -148,7 +148,7 @@ GiNaC::symbol symbol_factory::make_canonical_Rayleigh_momentum(unsigned int coun
 
 
 
-vector symbol_factory::make_vector(std::string name, boost::optional<std::string> latex_name)
+vector symbol_factory::make_vector(std::string name, std::optional<std::string> latex_name)
   {
     auto sym = this->make_symbol(std::move(name), std::move(latex_name));
     
@@ -162,7 +162,7 @@ vector symbol_factory::make_vector(const GiNaC::symbol& s)
   }
 
 
-initial_value symbol_factory::make_initial_value(std::string name, boost::optional<std::string> latex_name)
+initial_value symbol_factory::make_initial_value(std::string name, std::optional<std::string> latex_name)
   {
     auto sym = this->make_symbol(std::move(name), std::move(latex_name));
     auto k = this->make_unique_momentum();

@@ -28,7 +28,7 @@
 #define LSSEFT_ANALYTIC_ARGUMENT_CACHE_H
 
 
-#include "boost/filesystem/operations.hpp"
+#include <filesystem>
 
 
 //! argument cache serves as a central repository for behaviour controls
@@ -57,10 +57,10 @@ class argument_cache
     bool get_symmetrize_22() const;
 
     //! get output root
-    const boost::filesystem::path& get_output_path() const;
+    const std::filesystem::path& get_output_path() const;
 
     //! get mathematica output
-    const boost::filesystem::path& get_Mathematica_output() const;
+    const std::filesystem::path& get_Mathematica_output() const;
 
 
     // INTERNAL DATA
@@ -86,10 +86,10 @@ class argument_cache
   private:
 
     //! root for output file
-    boost::filesystem::path output_root;
+    std::filesystem::path output_root;
 
     //! root for output of Mathematica integrals
-    boost::filesystem::path output_mma;
+    std::filesystem::path output_mma;
 
   };
 
