@@ -148,6 +148,11 @@ namespace detail
         // insert source -> dest edge
         auto& dest_set = this->edges[source];
         dest_set.insert(dest);
+
+        // also insert edge going the other way, since we treat edges as unoriented
+        // (we only care about the graph as a means to test connectedness)
+        auto& src_set = this->edges[dest];
+        src_set.insert(source);
       }
 
 

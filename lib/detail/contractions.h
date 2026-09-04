@@ -101,7 +101,8 @@ namespace detail
       public:
 
         //! add an edge from source -> destination
-        //! (we track orientation of edges but this information isn't really used)
+        //! edges are stored in both directions, since is_connected() performs a forward
+        //! reachability walk and connectivity is properly an undirected property of the graph
         void add_edge(size_t source, size_t dest);
 
 
@@ -480,69 +481,74 @@ namespace detail
           {
             const auto& left = prod.first;
             const auto& right = prod.second;
-            
+
             const auto& left_clust = left.second;
             const auto& right_clust = right.second;
-        
+
             const auto& left_sym = left.first->get_symbol();
             const auto& left_mom = left.first->get_momentum();
-        
+
             const auto& right_sym = right.first->get_symbol();
             const auto& right_mom = right.first->get_momentum();
-    
+
             // first, if both momenta appear in the 'unassigned' set then this implementation doesn't
             // currently know what to do. Give up in despair.
-            bool left_unassigned = unassigned[left_clust].find(left_sym) != unassigned[left_clust].end();
-            bool right_unassigned = unassigned[right_clust].find(right_sym) != unassigned[right_clust].end();
-            
+            // NB: 'unassigned' and 'mma_map' are keyed by momentum, not by field symbol -- see
+            // clusters[i].get_momenta() above and mma_map[...][iv.get_momentum()] in
+            // assign_loop_momenta()/assign_external_momenta(). Looking these two containers up
+            // by the field symbol (as this code did before prompt 04) can never succeed, since
+            // every initial value in this model is created with the same field symbol ('delta').
+            bool left_unassigned = unassigned[left_clust].find(left_mom) != unassigned[left_clust].end();
+            bool right_unassigned = unassigned[right_clust].find(right_mom) != unassigned[right_clust].end();
+
             if(left_unassigned && right_unassigned)
               throw exception(ERROR_COULD_NOT_EVALUATE_WICK_CONTRACTION, exception_code::contraction_error);
-    
+
             // place symbols into canonical order, inherited from std::less<> applied to GiNaC
             // symbols (recall we define this ourselves to give lexical order on the symbol names)
             GiNaC::symbol l = left_sym;
             GiNaC::symbol r = right_sym;
             if(std::less<>{}(right_sym, left_sym)) std::swap(l,r);
-            
+
             // we have a choice which momentum to use
             // it's preferable to use either a simple external momentum or a simple loop momentum
             GiNaC::ex q;
-            
+
             // if either the left- or right-hand momentum is unassigned, we always use the other one
             if(left_unassigned)
               {
                 Ps.emplace_back(cfs::Pk(l, r, right_mom).subs(mma_map[right_clust]), right_clust);
-                
+
                 // add a rewriting rule for this contraction
-                mma_map[left_clust][left_sym] = -right_mom.subs(mma_map[right_clust]);
-                break;
+                mma_map[left_clust][left_mom] = -right_mom.subs(mma_map[right_clust]);
+                continue;
               }
             if(right_unassigned)
               {
                 Ps.emplace_back(cfs::Pk(l, r, left_mom).subs(mma_map[left_clust]), left_clust);
-                
+
                 // add a rewriting rule for this contraction
-                mma_map[right_clust][right_sym] = -left_mom.subs(mma_map[left_clust]);
-                break;
+                mma_map[right_clust][right_mom] = -left_mom.subs(mma_map[left_clust]);
+                continue;
               }
-            
+
             // otherwise, if the left-momentum is a simple symbol then we should use it;
             // this will catch cases where the momentum is exactly an external momentum or a simple loop
-            auto t1 = mma_map[left_clust].find(left_sym);
+            auto t1 = mma_map[left_clust].find(left_mom);
             if(t1 != mma_map[left_clust].end() && GiNaC::is_a<GiNaC::symbol>(t1->second))
               {
                 Ps.emplace_back(cfs::Pk(l, r, left_mom).subs(mma_map[left_clust]), left_clust);
-                break;
+                continue;
               }
-            
+
             // same for right-momentum
-            auto t2 = mma_map[right_clust].find(right_sym);
+            auto t2 = mma_map[right_clust].find(right_mom);
             if(t2 != mma_map[right_clust].end() && GiNaC::is_a<GiNaC::symbol>(t2->second))
               {
                 Ps.emplace_back(cfs::Pk(l, r, right_mom).subs(mma_map[right_clust]), right_clust);
-                break;
+                continue;
               }
-        
+
             // nothing to choose between the LHS and RHS momenta, so just pick one
             Ps.emplace_back(cfs::Pk(l, r, left_mom).subs(mma_map[left_clust]), left_clust);
           }
