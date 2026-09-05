@@ -176,8 +176,8 @@ campaign ever measured, including `--auto-symmetrize`: `1c177140d3688e558b445609
   outside that range (never observed to fire on the current operator basis). The `λ ≠ 0` and
   `μ ≠ ν` cases in `FabJ_eval` are **precondition assertions**, not gaps in a table — say this
   plainly if you re-derive this integral in the port. See the corrected feasibility study §3.1 and
-  `LEGACY-CODE-AUDIT.md` §1.3, §4.2 for the full derivation of why no other three-Bessel integral
-  can arise.
+  `~/Documents/Code/ScaleDependentBias/documents/LEGACY-CODE-AUDIT.md` §1.3, §4.2 for the full
+  derivation of why no other three-Bessel integral can arise.
 - **All 101 emitted integrands are IR-finite as q → 0.** (Note: `is_IR_safe()` does not itself
   establish this correctly for every limit — see I-06 below. This claim is about the actual emitted
   integrands, confirmed independently during planning, not about that function's own logic.)
@@ -223,7 +223,7 @@ scope boundary. **The port should treat all of them as real work items, not sett
   adjacent comment says "more than one", the code tests "more than two"; the two disagree, and the
   unassigned set has been measured at size exactly 1 across 780 calls in a full run, so neither
   branch has ever actually fired) and `assign_loop_momenta`'s greedy first-fit
-  (`contractions.h:407-470`, the `find_candidate` lambda). Study §7.1(iv)-(v) specifies a
+  (`lib/detail/contractions.h:407-470`, the `find_candidate` lambda). Study §7.1(iv)-(v) specifies a
   spanning-tree replacement for the port.
 - **Tier 2 combinatorics:** `enumerate_contractions` builds all `(N−1)!!` pairings and filters for
   connectedness afterwards — 15 pairings for six fields, 945 for ten, 135135 for fourteen. Study
@@ -255,11 +255,11 @@ scope boundary. **The port should treat all of them as real work items, not sett
 
 ## 6. Rayleigh momenta — what the port must reproduce
 
-*(Source: `validation/RAYLEIGH-ZERO-FINDINGS.md` §§3, 8, and the corrected `LEGACY-CODE-AUDIT.md`
-§1.3. This is the part of this document a port author most needs, and the campaign spent an entire
-prompt plus a day of follow-up work getting the diagnosis right — the first diagnosis, on
-2026-09-04, was wrong, and it is worth understanding *why* it was wrong, not just the corrected
-conclusion.)*
+*(Source: `validation/RAYLEIGH-ZERO-FINDINGS.md` §§3, 8, and the corrected
+`~/Documents/Code/ScaleDependentBias/documents/LEGACY-CODE-AUDIT.md` §1.3. This is the part of this
+document a port author most needs, and the campaign spent an entire prompt plus a day of follow-up
+work getting the diagnosis right — the first diagnosis, on 2026-09-04, was wrong, and it is worth
+understanding *why* it was wrong, not just the corrected conclusion.)*
 
 **What a Rayleigh label is.** It is a device that keeps a non-rotationally-invariant denominator
 `1/|Q|²` symbolic, for some vector `Q` built from the kernel's own momenta, until the numerator has

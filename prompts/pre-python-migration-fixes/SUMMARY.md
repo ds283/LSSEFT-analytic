@@ -100,7 +100,8 @@ else.**
    the current operator basis). After: the closed form
    `FabJ(0,n,n;s,t,u) = π/(4stu) · Pₙ((t²+u²−s²)/(2tu))`, valid for every `n`, because the reduction's
    own integration order (Rayleigh direction first) guarantees only the `σ=0` family is ever produced
-   (`LEGACY-CODE-AUDIT.md` §1.3, §4.2, corrected). This changes the *printed* term arrangement of 47
+   (`~/Documents/Code/ScaleDependentBias/documents/LEGACY-CODE-AUDIT.md` §1.3, §4.2, corrected).
+   This changes the *printed* term arrangement of 47
    of the 101 emitted `value_` expressions (confirmed count, §3) and, as a direct consequence, the
    kernel-numbering permutation on top of prompt 03's — but it changes no kernel's *value*: 101 of 101
    signatures still match `baseline/pre-fix` functionally, and the Wick-product half of every kernel
@@ -152,8 +153,8 @@ none of these were touched by any prompt, per `RECONCILIATION.md` §6's explicit
 - The two recovery branches in `evaluate_Wick_contractions` for a contraction with one unassigned
   endpoint (prompt 04's fix left these written but still unexercised on the two-point-function basis;
   they are exactly what an *n*-point or three-block case will exercise for the first time).
-- `assign_external_momenta`'s `labels.size() > 2` skip (`contractions.h:377`) and
-  `assign_loop_momenta`'s greedy first-fit (`contractions.h:407-470`) — both are Tier-2 heuristics
+- `assign_external_momenta`'s `labels.size() > 2` skip (`lib/detail/contractions.h:377`) and
+  `assign_loop_momenta`'s greedy first-fit (`lib/detail/contractions.h:407-470`) — both are Tier-2 heuristics
   exact only for the two-point function; the study specifies a spanning-tree replacement for the port.
 
 ---
