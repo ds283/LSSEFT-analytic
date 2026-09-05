@@ -253,6 +253,6 @@ With the verdict reversed, the prompt's step 3 was revisited:
 
 The prompt is therefore *Complete*, not *Blocked*. Its commit template for the "invariant holds"
 branch was not used verbatim, because the work landed in three commits over two days (`c88776f`,
-`5e2b208`, and the assertion commit recorded in `IMPLEMENTATION_STATE.md`); the template's bullet
+`5e2b208`, and `69cae4a`); the template's bullet
 about `remove_Rayleigh_trivial` pruning is the one that would have been wrong.
 

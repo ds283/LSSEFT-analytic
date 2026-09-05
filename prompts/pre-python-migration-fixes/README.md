@@ -24,8 +24,8 @@ Prompts 01–06 are complete; 07 is unblocked and not yet started. Prompt 06 was
 applied to a representation of the kernel in which the relevant coefficient's vanishing is not yet
 manifest, and the invariant in fact holds (`validation/RAYLEIGH-ZERO-FINDINGS.md` §8, revised in
 place). Two commits landed outside the prompt sequence on 2026-09-05 — `5e2b208`, which replaced
-the Fabrikant table with its closed form, and the assertion commit named in
-`IMPLEMENTATION_STATE.md` — both functionally neutral. Prompt 07's text was amended the same day to
+the Fabrikant table with its closed form, and `69cae4a`, which added the zero-valued-Rayleigh
+assertion — both functionally neutral. Prompt 07's text was amended the same day to
 account for them; read the boxed note at its top. The remark under "Dependency notes" below that 06
 "must not re-enable the commented-out throw as written" stands, and is now realised as an assertion
 at a different point in the pipeline.

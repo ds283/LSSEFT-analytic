@@ -10,7 +10,7 @@ that reverses its verdict — read it to the end), and `validation/RAYLEIGH-ZERO
 > asserted (`IMPLEMENTATION_STATE.md` I-03, closed). (2) Two follow-up commits outside the prompt
 > sequence changed the code: `5e2b208` replaced the Fabrikant table in
 > `lib/detail/special_functions.cpp` with the closed form `π Pₙ((t²+u²−s²)/2tu)/(4stu)`, valid for
-> all *n*, and a further commit added the zero-valued-Rayleigh assertion in
+> all *n*, and `69cae4a` added the zero-valued-Rayleigh assertion in
 > `one_loop_reduced_integral`. Both are functionally neutral (101/101 signatures, dedup, counterterm
 > map, warnings all identical to `baseline/pre-fix`), but the FabJ change altered the *printed* form
 > of 47 integrands and therefore the kernel numbering (I-11). The expectations below have been
@@ -30,8 +30,7 @@ traced to a code version."*
 
 - Prompts 01-06 complete (06 was recorded as *Blocked* on 2026-09-04 and re-marked *Complete* on
   2026-09-05; treat it as complete).
-- The two 2026-09-05 follow-up commits (`5e2b208` and the assertion commit named in
-  `IMPLEMENTATION_STATE.md`) are on the branch you start from.
+- The two 2026-09-05 follow-up commits (`5e2b208` and `69cae4a`) are on the branch you start from.
 - Working tree clean. New branch.
 
 ## Work item 1 — post-fix baseline
