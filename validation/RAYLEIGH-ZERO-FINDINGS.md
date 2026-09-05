@@ -2,9 +2,14 @@
 
 **Prompt:** `prompts/pre-python-migration-fixes/06-rayleigh-zero-diagnosis.md`
 **Date:** 2026-09-04
-**Verdict: the study's proposed invariant does NOT hold.** No assertion or eager pruning was
-implemented (step 3, items 1-2). Only the aliasing fix (step 3, item 3) was made. This is one of
-the two outcomes the prompt explicitly anticipates and sanctions ("Stop. Do not attempt a fix.").
+**Verdict (revised 2026-09-05): the study's proposed invariant HOLDS, for all 128 cases.** The
+original verdict of 2026-09-04 ("does NOT hold; 92 of 128 violate") was wrong: it applied a
+syntactic test to a representation of `K` in which the vanishing of the relevant coefficient is not
+yet manifest. The corrected reasoning is in §3 and the resolution, with a checkpoint table, is in
+§8. On 2026-09-04 no assertion or eager pruning was implemented (step 3, items 1-2), following the
+prompt's "Stop. Do not attempt a fix." branch; only the aliasing fix (step 3, item 3) was made. §8.4
+records where an assertion can now safely go, and why the eager-pruning proposal must *not* be
+implemented as originally worded.
 
 This document is written to stand alone: a reader does not need to re-run any instrumentation to
 understand what was found or what remains open.
@@ -24,7 +29,11 @@ A "Rayleigh momentum" is an auxiliary scalar label the code introduces whenever 
 denominator of the form `1/|Q|²` for some vector `Q` built out of the kernel's own momenta (e.g.
 the SPT `alpha`/`beta` vertex functions, or `InverseLaplacian`). The label is a bare symbol; a
 side table (`Rayleigh_list`, a `GiNaC::exmap`) separately records what physical momentum
-expression that symbol denotes. `merge_Rayleigh_rules` (`Rayleigh_momenta.cpp:34`) is called every
+expression that symbol denotes. The label appears in `K` only with negative even powers; numerators
+are always written in the underlying momenta (`alpha`, `beta` and `InverseLaplacian` are the only
+functions that mint labels, each via the three-argument `multiply_kernel`). The point of the device
+is to keep a non-rotationally-invariant denominator symbolic until the numerator has been reduced,
+which is what makes the Rayleigh plane-wave expansion possible later. `merge_Rayleigh_rules` (`Rayleigh_momenta.cpp:34`) is called every
 time two kernels carrying such tables are combined (added or multiplied), and it re-evaluates each
 inherited rule's value against the current relabelling substitution. The study found that this
 re-evaluation produces `value == 0` 128 times in a full canonical run, proposed the invariant
@@ -105,46 +114,55 @@ one of the 92 violating events (see §3) carries a Wick string of the schematic 
 drawn from the third-order growth-factor basis (`DD`, `DJ`, `DF`, `DG`, `DE`, ... — the labels
 `delta_3`'s construction in `main.cpp` uses).
 
+**The physics of these events (added 2026-09-05).** The zero-valued rule is the code's
+representation of the third-order kernel evaluated at `F3(L, -L, k)`. In that configuration the SPT
+vertex `alpha(k12, k3)` with `k12 = s + t = 0` is formally `0/0`: its denominator `|s+t|²` vanishes,
+but so does its numerator `(s+t).(s+t+q)`; likewise for every `InverseLaplacian` of a second-order
+object (`Phi_2`, `phi_2`) whose total momentum is `s+t`, because `Galileon2`, `gradgrad` and
+`Laplacian` all multiply in a numerator proportional to `s+t`. The whole term is therefore
+identically zero, not singular. The label is exactly what keeps GiNaC from evaluating `pow(0, -2)`
+and throwing `power::eval(): division by zero` (which is what an *unlabelled* `1/|s+t|²` would do
+at this point; verified directly). A zero-valued rule is thus the Rayleigh bookkeeping doing its
+job, and the commented-out throw is too strong for a good reason. The difference between the 36
+"holding" and 92 "violating" events of §3 is only *how manifestly* the numerator vanishes: in the 36
+cases an `indexed(0, i)` factor evaluates to zero on substitution and `prune_Rayleigh_list` removes
+the rule; in the 92 cases the cancellation needs `(L0.i)^2 * (L0.j)^(-2) = 1`, which GiNaC's indexed
+algebra does not perform (§8).
+
 ## 3. Step 2 — the invariant
 
 ### 3.1 What was tested, and at what stage
 
 The study's invariant is: *for a zero-valued rule, does its label occur in `K`?* This is exactly
 the test `prune_Rayleigh_list` (`Rayleigh_momenta.cpp:167-187`) already performs for every rule
-(zero or not), using `get_expr_symbols` (`utilities/GiNaC_utils.h:63`). The natural, and only
-principled, place to evaluate it is therefore **the same point in the pipeline where
-`prune_Rayleigh_list` itself runs**: inside `Pk_one_loop::cross_product`, immediately before the
-call at `Pk_one_loop.h:424`, using the fully-assembled `K` for that specific
-`(t1, t2, Wick contraction)` term.
-
-This is deliberate, not a default: the label's own *value* is only ever computed inside
-`merge_Rayleigh_rules`, which does not have access to any `K` at all (it operates purely on the
-`exmap` substitution lists) — checking "occurs in `K`" there is not meaningful, because at that
-point `K` for the eventual power-spectrum term does not yet exist in assembled form. The instrument
-that produced the counts below did **not** attempt to check the invariant at kernel-construction
-time (`fourier_kernel.cpp`'s `operator+=`/`operator*=`) for the stronger reason given in §2.1: no
-zero-valued rule is ever created there in the first place, so there is nothing to check at that
-earlier stage.
-
-**Two checkpoints within `cross_product` were compared**, to address the prompt's explicit warning
-that a label may enter or leave `K` as relabelling proceeds:
+(zero or not), using `get_expr_symbols` (`utilities/GiNaC_utils.h:63`). On 2026-09-04 it was
+evaluated inside `Pk_one_loop::cross_product`, immediately before the call at `Pk_one_loop.h:424`,
+using the fully-assembled `K` for that specific `(t1, t2, Wick contraction)` term, at two
+checkpoints:
 
 - **early**: immediately after `K = relabel_index_product(K1_remap, K2_remap, this->loc)`
   (`Pk_one_loop.h:407`), i.e. before `remove_Rayleigh_trivial` or `simplify_index` have touched `K`;
 - **late**: immediately before `prune_Rayleigh_list` runs, i.e. after `K.subs(Rayleigh_triv)` and
   `simplify_index(K, dotp, Rayleigh_list, this->loc)`.
 
-**The two checkpoints agree exactly**, event for event: 92 of 128 violate at *both* stages, 36 of
-128 hold at *both* stages. `remove_Rayleigh_trivial` cannot affect this (it never removes a
-zero-valued rule — that is exactly the defect the prompt records as already known). The Rayleigh
-power-cancellation logic inside `simplify_index`/`simplify_mul`
-(`utilities/GiNaC_utils.cpp:156-206`), which *can* algebraically cancel `1/label²` against a
-matching power of the rule's own value elsewhere in the same product, cannot fire for a zero-valued
-rule either: it works by pattern-matching `pow(indexed(value, idx), n)` against a factor actually
-present in the expression, and `indexed(0, idx)` is not a pattern that ever matches a real
-sub-expression, since GiNaC eliminates a literal `0` on sight. So there is, in fact, only one
-meaningful checkpoint here — the invariant's truth value is fixed by the time `K` is assembled at
-all, at least across the window this diagnosis was able to observe.
+**The two checkpoints agree exactly**, event for event: 92 of 128 have the label in `K` at *both*
+stages, 36 of 128 at neither. That measurement is correct. The error in the original write-up was
+to call this "the only principled place" to test, and to read syntactic presence of the label as
+algebraic dependence on it. Both `cross_product` checkpoints see `K` as a GiNaC *indexed*
+expression, and GiNaC's indexed algebra is not a normal form: `simplify_indexed` does not cancel
+`(L0.i)^2` against `(L0.j)^(-2)` when the two dummy indices differ (verified directly on the 92
+offending sub-sums; it returns every one of them nonzero). So a term can be present in `K` with a
+literally nonzero GiNaC coefficient and still be identically zero as a function of the momenta.
+
+The stage at which the test is meaningful is the first point where `K` is in *scalar* form. That is
+the top of the `one_loop_reduced_integral` constructor, where `dot_products_to_cos(K).expand()`
+rewrites every `(L0.i)^2` as the scalar `L0*L0` and every contracted pair `a.i*b.i` as
+`a*b*Cos(a,b)`. A third checkpoint placed there (2026-09-05, §8) finds **zero** of the 128 labels
+surviving. `remove_Rayleigh_trivial` cannot affect any of this (it never removes a zero-valued
+rule), and the Rayleigh power-cancellation logic inside `simplify_mul`
+(`utilities/GiNaC_utils.cpp:156-206`) cannot fire for a zero-valued rule either, since it
+pattern-matches `pow(indexed(value, idx), n)` and `indexed(0, idx)` evaluates to `0` on sight.
+Neither observation bears on the verdict; the cancellation that matters is the `|L|²/|L|²` one.
 
 ### 3.2 The refined test: denominator, not just presence
 
@@ -157,73 +175,57 @@ Rayleigh label enters `K` **only** via the `1/Q.norm_square()`-type factor that 
 in `K.normal().denom()` — the denominator of `K` after being put over one common denominator and
 having common factors with the numerator cancelled?
 
-**Result: identical to the crude test.** All 92 "occurs in `K`" events occur specifically in the
-normalised denominator; none are numerator-only artifacts. `.normal()` is GiNaC's own rational
-simplification, so if a `1/label²` sub-term had genuinely cancelled against something else in the
-sum making up `K`, `.normal()` should have removed `label` from the reduced denominator — it did
-not, in any of the 92 cases.
+**Result: identical to the crude test**, and for the same reason it is not informative. `.normal()`
+is GiNaC's rational normal form over *atoms*, and it treats every `indexed` object as an opaque
+atom: `(L0.i)^2` and `(L0.j)^(-2)` are different atoms to it, so the sub-terms
+`X*(L0.i)^2*(L0.j)^(-2)*(S0.k)^(-2)` and `-X*(S0.k)^(-2)` do not cancel and `S0` stays in the
+"reduced" denominator. The refined test therefore measured the same syntactic fact as the crude
+one. What it was intended to establish (that the coefficient of `1/label²` is genuinely nonzero) is
+false for all 92 cases (§8).
 
 ### 3.3 Verdict
 
-**The invariant is violated in 92 of 128 cases (71.9 %); it holds in 36 of 128 (28.1 %).** This is
-tested at a single, well-defined, and — as far as this diagnosis could establish — the *only*
-meaningful pipeline stage (§3.1), and the violations are confirmed to be genuine denominator
-occurrences, not an artefact of the test (§3.2).
+**Original (2026-09-04): "violated in 92 of 128 cases (71.9 %)". Revised (2026-09-05): holds in
+128 of 128.** The 92 "violations" are terms whose coefficient is identically zero but whose vanishing
+requires the cancellation `(L0.i)^2 * (L0.j)^(-2) = 1`, which happens at the cosine conversion at
+the top of `one_loop_reduced_integral`, downstream of the checkpoints used on 2026-09-04. The
+`K.normal().denom()` test of §3.2 cannot see that cancellation and so did not confirm anything.
 
-**This is squarely the "does not hold" branch the prompt anticipates.** Per its explicit
-instruction, no assertion and no eager pruning were implemented (step 3, items 1-2 were not done).
+No assertion and no eager pruning were implemented on 2026-09-04; see §8.4 for what can now be done.
 
-### 3.4 The open question this hands to a physicist
+### 3.4 The mechanism (was: "the open question this hands to a physicist")
 
-92 of 128 zero-valued Rayleigh rules have their label present in a genuine `1/label²` factor of `K`
-at the last point `K` is available for that term, and yet **the full canonical run completes
-cleanly**: exactly the same 3 warnings as every other prompt in this campaign, and critically **no
-`ERROR_NO_LOOPQ_IN_RAYLEIGH`** (`localizations/en/messages_en.h:107`, thrown by
+The 2026-09-04 text of this section recorded that the run completes with no
+`ERROR_NO_LOOPQ_IN_RAYLEIGH` (`localizations/en/messages_en.h:107`, thrown by
 `one_loop_reduced_integral::reduce` when a selected Rayleigh momentum's value has degree 0 in the
-loop momentum — which a literal `0` trivially does). The prompt's own background material already
-established this negative fact ("if a zero-valued Rayleigh momentum were ever selected... the
-one-Rayleigh path would immediately throw... The run completes, so none is ever selected"); this
-diagnosis confirms it is still true after the fixes in prompts 04-05, and adds the *positive* fact
-that the label really is present in `K`'s denominator for most of these events, not merely
-in `Rayleigh_list` as inert bookkeeping.
+loop momentum) despite 92 labels being present in `K`, and offered three candidate explanations,
+none verified. The mechanism was established on 2026-09-05 (§8) and none of the three candidates was
+right:
 
-So there must be a mechanism, downstream of everything this diagnosis instrumented (i.e. inside
-`one_loop_reduced_integral::reduce()` and the machinery that *selects* which Rayleigh momentum from
-`Rayleigh_list` becomes "the" reduction variable `R` for a given `1/|R|^{2n}` factor), that
-prevents these 92 surviving zero-valued labels from ever actually being selected and evaluated
-numerically. Candidate explanations, **none of which were verified here** (this is exactly the line
-the prompt draws between an implementation task and a physics one):
+1. *A genuine IR cancellation across Wick contractions* — no. Every one of the 92 terms is
+   individually and identically zero; no summation over contractions or over `(t1, t2)` pairs is
+   involved. (22 records are merged in `Pk_db::emplace` for unrelated reasons, and the labels are
+   still present in the merged `K`.)
+2. *The reduction's selection rule never picks these labels* — no. `one_loop_reduced_integral::reduce`
+   selects by `term.has(sym)` over every rule in the list, so any label present in a term *is*
+   selected. `order_Rayleigh_set` (`loop_integral.cpp`) is a hashing/ordering helper, not a
+   selection rule. Had a zero-valued label reached `reduce()`, the run would have thrown.
+3. *Absorbed by `simplify_indexed`'s own logic* — closest, but the operative step is not
+   `simplify_indexed` (which demonstrably does *not* cancel these terms) but `dot_products_to_cos`,
+   which converts indexed objects to scalars so that ordinary `expand()` cancels them.
 
-1. **A genuine IR cancellation.** The `alpha`/`beta` vertex functions are known in the SPT
-   literature to carry individually-singular `1/k²`-type structures at small `k` that cancel
-   between different contraction terms of the same order when properly summed — plausible here,
-   since `K` as checked is the term for one *single* Wick contraction, not the sum over all
-   contractions contributing to the same `(t1, t2)` kernel product. If the numerator's own
-   structure vanishes to matching order at the same locus (a fact the crude/refined tests above
-   cannot see, since `K.normal()` operates on this one term in isolation and does not know about
-   the other terms it will eventually be summed against), the surviving factor could be an
-   arithmetic artefact that becomes finite (or is not the leading, loop-momentum-carrying factor)
-   only after further summation — but that summation happens well after the point checked here.
-2. **The reduction machinery's own selection rule never picks these specific labels.** If
-   `one_loop_reduced_integral::reduce()` always prefers some other, non-degenerate Rayleigh momentum
-   present in the same `K` (there is often more than one surviving rule per term) as the variable
-   it expands in, the zero-valued factor might sit inert in the expression, structurally present but
-   never substituted or evaluated. This was not traced; `one_loop_reduced_integral.cpp`'s selection
-   logic (`order_Rayleigh_set`, the machinery around `loop_integral.cpp:172` and `:241`) is a
-   substantial, separate piece of code this diagnosis did not instrument.
-3. **A degree-0 label is silently absorbed elsewhere**, e.g. if the surviving `1/label²` factor
-   is itself multiplied by an *indexed* (not scalar) quantity that later cancels through
-   `simplify_indexed`'s own separate logic, invisible to a plain-symbol occurrence test.
+The pipeline is therefore *exactly* safe, not merely empirically safe, and it is safe by
+construction: labels are confined to denominators, numerators are written in the underlying
+momenta, and the scalar conversion runs before any Rayleigh label is selected. These are design
+decisions of the reduction, not coincidences (§8.3).
 
-**What a port author needs to know:** on the current operator basis, the pipeline is empirically
-safe (no crash, and — see §5 — functionally unchanged output, confirmed against the archived
-baseline). But the mechanism that makes it safe for these 92 cases is not established by any code
-comment, test, or this diagnosis. A Python/SymPy port that re-derives Rayleigh reduction from first
-principles should not assume "label present in `K`, value zero" is impossible or automatically
-harmless; it should either reproduce whatever selection/cancellation mechanism actually protects
-correctness here (which requires reading `one_loop_reduced_integral::reduce()` in full), or
-independently verify, symbolically, that every one of these 92 configurations reduces to a finite
-result before trusting it as a differential-oracle match.
+**What a port author needs to know** (replaces the 2026-09-04 text): a zero-valued Rayleigh rule
+whose label is present in the raw indexed `K` is the normal signature of a `P13`-type
+self-contraction and denotes a term that is identically zero. A port must (a) never substitute a
+zero value into a label carrying a negative power, since that is a genuine `1/0` at the algebra
+level, and (b) reduce each term to scalar form (or otherwise canonicalise `|L|²` factors) *before*
+deciding whether it is nonzero or whether a label is "in use". Checked in that order, the invariant
+holds and can be asserted (§8.4).
 
 ## 4. What *was* implemented: the aliasing fix (step 3, item 3)
 
@@ -329,6 +331,12 @@ counts in this document were captured from the instrumented run's `stderr` befor
 not reproducible by re-reading the shipped source, only by re-adding equivalent instrumentation (the
 mechanism is straightforward to reconstruct from §2-§3 above if ever needed again).
 
+The 2026-09-05 resolution (§8) used three further temporary `std::cerr` probes: at the end of the
+`loop_integral` constructor, in the merge branch of `Pk_db::emplace`, and at the top of the
+`one_loop_reduced_integral` constructor both before and after `dot_products_to_cos`. They were
+reverted with `git checkout` before anything was committed, and the binary was rebuilt from the
+clean tree. The counts they produced are in §8.1 and the verbatim sub-terms in §8.2.
+
 ## 7. Summary for a reader in a hurry
 
 - 128 zero-valued Rayleigh rules per canonical run, exactly matching the study. All 128 arise at a
@@ -339,12 +347,74 @@ mechanism is straightforward to reconstruct from §2-§3 above if ever needed ag
   other assigns them equal-and-opposite loop momentum, collapsing a pre-existing `A+B`-type
   Rayleigh value to zero. Confirms the study's "same momentum, both signs" hypothesis, generalised
   beyond the specific `Galileon2`/`Galileon3`/`gradgrad` functions it guessed.
-- The proposed invariant ("zero ⇒ label absent from `K`") **fails in 92 of 128 cases (72 %)**,
-  tested at the one meaningful pipeline stage, confirmed to be genuine denominator occurrences.
-  **Verdict: does not hold.** No assertion, no eager pruning.
-- The run is nonetheless empirically safe today (no crash, functionally unchanged output) via a
-  mechanism this diagnosis did not — and could not, within scope — establish. That is now an
-  explicit, documented open question (§3.4) for whoever ports or further modifies this reduction
-  machinery.
+- The proposed invariant ("zero ⇒ label multiplies nothing") **holds in 128 of 128 cases**. The
+  2026-09-04 verdict "fails in 92 of 128" tested syntactic presence of the label in an indexed
+  `K` at `cross_product`, where the cancellation `(L0.i)^2 (L0.j)^(-2) = 1` has not yet been
+  performed; at the first scalar representation (after `dot_products_to_cos`) no label survives.
+- The run is exactly safe, by construction: labels live only in denominators, numerators carry the
+  underlying momenta and vanish identically at `F3(L, -L, k)`, and the scalar conversion precedes
+  Rayleigh selection. The resolved mechanism and a checkpoint table are in §8.
+- An assertion can now be added after the cosine conversion (§8.4). The eager-pruning proposal
+  must not be implemented by substitution (§8.4).
 - The aliasing fix (item 3c) was made regardless, is provably behaviour-preserving, and is verified
   byte-identical.
+
+## 8. Resolution (2026-09-05)
+
+### 8.1 Probes
+
+Three temporary probes (removed afterwards, §6) recorded, for every rule with value `0` in the
+canonicalised `Rayleigh_momenta` list of a `loop_integral`, whether its label occurs in `K`:
+
+| Checkpoint | Records with a zero-valued label present in `K` |
+|---|---|
+| End of the `loop_integral` constructor (after `match_Wick_to_Rayleigh` and canonicalisation) | **92**, all with Wick product `Pk(delta,delta,k)*Pk(delta,delta,L0)` |
+| After merging in `Pk_db::emplace` (`*kernel += *elt`) | 22 merge events; the label is still present in every merged `K` |
+| Top of `one_loop_reduced_integral`, raw `K` | **70** (= 92 − 22) |
+| Same point, after `dot_products_to_cos(K).expand()` | **0** |
+
+The first row reproduces the 92 of §3 exactly. The last row is why `reduce()` never sees a
+zero-valued label and never throws.
+
+### 8.2 The surviving sub-terms
+
+Every one of the 92 sub-sums carrying a zero-valued label has the shape
+`X * (1 - (L0.i)^2 * (L0.j)^(-2))`. Two representative examples, verbatim from the probe output
+(`S0`, `S1` are canonical Rayleigh labels, `L0` the canonical loop momentum, `i<n>` dummy indices):
+
+```
+-(L0.i126)^2*(L0.i207)^2*b1_1*(S0.i97)^(-2)*bGamma3*(L0.i92)^(-2) + (L0.i126)^2*b1_1*(S0.i97)^(-2)*bGamma3
+-(L0.i54)^2*(S0.i53)^(-2)*b1_1*b1_3 + 1/2*(L0.i54)^2*(L0.i51)^(-2)*(L0.i50)^2*(S0.i53)^(-2)*b1_1*b1_3 + 1/2*(L0.i54)^2*(L0.i50)^2*(S0.i53)^(-2)*b1_1*b1_3*(L0.i49)^(-2)
+```
+
+`(L0.i207)^2 * (L0.i92)^(-2)` is `|L|²/|L|² = 1` written with two different dummy indices. It arises
+from a `Laplacian` adjacent to an `InverseLaplacian` whose trivial rule (`Q -> L`) has been
+substituted back by `remove_Rayleigh_trivial`; each operator mints its own dummy index. GiNaC's
+`simplify_indexed` returns these sub-sums unchanged (checked for all 92), and `.normal()` treats
+each indexed object as an atom (§3.2). `dot_products_to_cos` rewrites both factors as the scalar
+`L0^2`, after which the terms are identical and `expand()` cancels them.
+
+### 8.3 Why this is by design
+
+The reduction in `one_loop_reduced_integral` relies on three properties that the rest of the code
+enforces: Rayleigh labels appear only with negative even power (`simplify_mul` throws
+`ERROR_RAYLEIGH_MOMENTA_POSITIVE_POWER` on a matched positive power, and `Laplacian` deliberately
+does not mint a label); numerators are written in the underlying momenta by the `vector` class, so
+they vanish identically whenever the labelled vector does; and the conversion to scalar form runs
+before any term is classified by the Rayleigh labels it contains. Under these properties a
+zero-valued rule can only ever multiply an identically-zero coefficient, which is the invariant the
+study proposed. The 2026-09-04 diagnosis tested it before the third property had acted.
+
+### 8.4 What can be done now
+
+- **An assertion is safe at one place**: in the `one_loop_reduced_integral` constructor, after
+  `K = dot_products_to_cos(K).expand()`, assert that no rule with value `0` has its label in `K` or
+  in the Wick product. Placed anywhere earlier it fires spuriously (92 times).
+- **The eager-pruning proposal must not be implemented as a substitution.** `remove_Rayleigh_trivial`
+  works by returning a substitution map that is applied to `K`. Extending it to zero-valued rules
+  would substitute `label -> 0` into `pow(indexed(label, i), -2)`, and GiNaC then throws
+  `power::eval(): division by zero` (verified with a standalone GiNaC test). Zero-valued rules may be
+  *dropped from the list* once the assertion above has passed, but never substituted.
+- **For a Python/SymPy port**: reduce terms to scalar form (or canonicalise `|L|²` factors) before
+  testing for zero or for label usage, and treat "zero-valued rule, label present in the raw indexed
+  kernel" as the expected signature of a `P13` self-contraction rather than as a defect.

@@ -211,3 +211,20 @@ matching the precedent set by prompt 05's Legendre-shape instrumentation. Confir
   lists, not kernel expressions — and even if threaded through, kernel construction was confirmed to
   never produce a zero-valued rule in the first place (§2.1 of the findings doc), so there would be
   nothing to check there regardless.
+
+---
+
+## Addendum (2026-09-05)
+
+The open question above was resolved the next day, outside the campaign, and the verdict of this
+prompt is reversed: **the proposed invariant holds for all 128 zero-valued rules.** The 92
+"violations" are terms that are identically zero but whose vanishing requires
+`(L0.i)^2 * (L0.j)^(-2) = 1`, which GiNaC's indexed algebra and `.normal()` do not perform; the
+cancellation happens at `dot_products_to_cos(K).expand()`, the first statement of the
+`one_loop_reduced_integral` constructor, before `reduce()` selects any Rayleigh label. The
+"selection logic" this log pointed at is not involved (`reduce()` selects by `has()`, and would have
+thrown had a zero-valued label reached it). See `validation/RAYLEIGH-ZERO-FINDINGS.md` §3 (corrected)
+and §8 (resolution, with the checkpoint table 92 → 70 → 0), and `IMPLEMENTATION_STATE.md` I-03
+(closed). The dead-end note above stands. **For prompt 07:** carry §8 of the findings document into
+the handover, not the superseded §3.4 wording quoted here.
+

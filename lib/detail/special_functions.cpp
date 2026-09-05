@@ -27,8 +27,8 @@
 #include <sstream>
 
 #include "special_functions.h"
+#include "legendre_utils.h"
 
-#include "shared/error.h"
 #include "shared/defaults.h"
 
 #include "shared/exceptions.h"
@@ -71,33 +71,18 @@ namespace Fabrikant
           throw exception(ERROR_FABJ_SECOND_ARGS_NEGATIVE, exception_code::Fabrikant_error);
 
 #ifdef REDUCE_FABRIKANT_INTEGRALS
-        if(mu_num.to_int() == 0)
-          return GiNaC::Pi/(4*s*t*u);
-
-        if(mu_num.to_int() == 1)
-          return (GiNaC::Pi*(-GiNaC::pow(s,2) + GiNaC::pow(t,2) + GiNaC::pow(u,2)))/(8*s*GiNaC::pow(t,2)*GiNaC::pow(u,2));
-
-        if(mu_num.to_int() == 2)
-          return (GiNaC::Pi*(3*GiNaC::pow(GiNaC::pow(s,2) - GiNaC::pow(t,2),2) + 2*(-3*GiNaC::pow(s,2) + GiNaC::pow(t,2))*GiNaC::pow(u,2) +
-                      3*GiNaC::pow(u,4)))/(32*s*GiNaC::pow(t,3)*GiNaC::pow(u,3));
-
-        if(mu_num.to_int() == 3)
-          return (GiNaC::Pi*(-5*GiNaC::pow(GiNaC::pow(s,2) - GiNaC::pow(t,2),3) +
-                      3*(5*GiNaC::pow(s,4) - 6*GiNaC::pow(s,2)*GiNaC::pow(t,2) + GiNaC::pow(t,4))*GiNaC::pow(u,2) +
-                      3*(-5*GiNaC::pow(s,2) + GiNaC::pow(t,2))*GiNaC::pow(u,4) + 5*GiNaC::pow(u,6)))/
-                 (64*s*GiNaC::pow(t,4)*GiNaC::pow(u,4));
-        
-        if(mu_num.to_int() == 4)
-          return (GiNaC::Pi*(35*GiNaC::pow(GiNaC::pow(s,2) - GiNaC::pow(t,2),4) -
-                      20*GiNaC::pow(GiNaC::pow(s,2) - GiNaC::pow(t,2),2)*(7*GiNaC::pow(s,2) - GiNaC::pow(t,2))*GiNaC::pow(u,2) +
-                      6*(35*GiNaC::pow(s,4) - 30*GiNaC::pow(s,2)*GiNaC::pow(t,2) + 3*GiNaC::pow(t,4))*GiNaC::pow(u,4) +
-                      20*(-7*GiNaC::pow(s,2) + GiNaC::pow(t,2))*GiNaC::pow(u,6) + 35*GiNaC::pow(u,8)))/
-                 (512*s*GiNaC::pow(t,5)*GiNaC::pow(u,5));
-
-        error_handler handler;
-        std::ostringstream msg;
-        msg << WARNING_UNEVALUATED_FABRIKANT << " " << mu_num.to_int() << '\n';
-        handler.warn(msg.str());
+        // The only three-Bessel integral this reduction can produce is the sigma = 0 family
+        //   FabJ(0, n, n; s, t, u) = int_0^inf x^2 j_0(s x) j_n(t x) j_n(u x) dx ,
+        // because the angular integral over the Rayleigh vector is always performed first, against a
+        // kernel with no angular dependence on it, so only the l = 0 mode of its plane-wave expansion
+        // survives (see one_loop_reduced_integral::one_loop_reduce_one_Rayleigh). This family has the
+        // elementary closed form, valid for all n on the triangle |t-u| < s < t+u,
+        //   FabJ(0, n, n; s, t, u) = pi / (4 s t u) * P_n( (t^2 + u^2 - s^2) / (2 t u) ) .
+        // With the reduction's later substitution s -> sqrt(t^2 + u^2 - 2 t u x) the Legendre
+        // argument is exactly x. The explicit table for n <= 4 that this replaced (2026-09-05) is
+        // recovered term-for-term by expanding this expression; n = 5 was also checked numerically.
+        // Outside the triangle the integral vanishes; that support condition is imposed by the caller.
+        return GiNaC::Pi / (4*s*t*u) * LegP(static_cast<unsigned int>(mu_num.to_int()), (t*t + u*u - s*s) / (2*t*u));
 #endif
 
         return FabJ(lambda, mu, nu, s, t, u).hold();
