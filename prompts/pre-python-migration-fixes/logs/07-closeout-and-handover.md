@@ -3,10 +3,9 @@
 **Prompt:** `prompts/pre-python-migration-fixes/07-closeout-and-handover.md`
 **Executed:** 2026-09-05
 **Branch:** `pre-python-migration-fixes/07-closeout-and-handover`
-**Commit:** `TBD` (substantive) — `Archive the post-fix oracle baseline and write the port handover`; a
-follow-up bookkeeping commit records this SHA in this log and in `IMPLEMENTATION_STATE.md`, and a
-second follow-up appends the clean-checkout smoke-test result, performed after the tag exists (see
-§3.1 D-1 for why three commits, not one).
+**Commit:** `7b75eb45aed4590fa6c708a86a814d8e38b919ed` — `Archive the post-fix oracle baseline and
+write the port handover` (substantive commit). A second, small commit appends the clean-checkout
+smoke-test result below, performed after the tag exists (see §3.1 D-1 for why not one commit).
 **Parent commit:** `74bc2849d715cfe358451420b290cf1e73c5f74a`
 **Status:** Complete
 
