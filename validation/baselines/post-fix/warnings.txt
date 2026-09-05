@@ -1,0 +1,15 @@
+# validation/baselines/post-fix/warnings.txt
+#
+# The complete set of diagnostics emitted by the canonical run, ANSI colour codes and
+# per-run timestamps stripped. Regenerate with:
+#
+#   sed -E $'s/\[[0-9;]*m//g' run.log \
+#     | sed -E 's/\[[0-9]{4}-[A-Za-z]{3}-[0-9]{2} [0-9:]{8}\]//' | grep -E '^warning:'
+#
+# Identical to validation/baselines/pre-fix/warnings.txt and to all five post-fix runs
+# captured for prompt 07. The q0 warning is issue I-02: never explained, presumed benign,
+# captured so that a change in the warning set is detectable.
+#
+warning: lsseft-analytic : Kernel does not depend on available momentum vector q0
+warning: lsseft-analytic : Empty RSD Pk group for filter pattern 'bG3'
+warning: lsseft-analytic : Empty RSD Pk group for filter pattern 'bG3*b1_1'
