@@ -228,3 +228,31 @@ and §8 (resolution, with the checkpoint table 92 → 70 → 0), and `IMPLEMENTA
 (closed). The dead-end note above stands. **For prompt 07:** carry §8 of the findings document into
 the handover, not the superseded §3.4 wording quoted here.
 
+### Step 3, closed 2026-09-05
+
+With the verdict reversed, the prompt's step 3 was revisited:
+
+- **Item 1, assert the invariant — done.** The check lives in the `one_loop_reduced_integral`
+  constructor, immediately after `K = dot_products_to_cos(K).expand()`: for every rule with value
+  `0`, neither `K` nor the Wick product may contain its label, else
+  `ERROR_RAYLEIGH_ZERO_LABEL_SURVIVES` (new constant in `localizations/en/messages_en.h`, next to
+  `ERROR_RAYLEIGH_MOMENTUM_IS_ZERO`, whose text does not fit) is thrown. This is the *only* place the
+  invariant holds: the same check placed before the cosine conversion aborts the run on the first
+  `P13` record (demonstrated with a temporary build; the run terminated with the new message), so
+  "fires when violated" is established. Verification of the shipped build: emitted tree
+  byte-identical to the `5e2b208` tree (21/21 non-timestamp files), 101/101 signatures vs
+  `baseline/pre-fix`, dedup 101 → 95 / 6 pairs, counterterm map and warning set identical.
+- **Item 2, eager pruning in `remove_Rayleigh_trivial` — deliberately not done**, and the prompt's
+  own caution is the reason: that function prunes *by substitution*, and substituting `label -> 0`
+  into a `pow(indexed(label, i), -2)` factor makes GiNaC throw `power::eval(): division by zero`
+  (verified with a standalone GiNaC test). At the point `remove_Rayleigh_trivial` runs the label
+  *is* still in `K` (92 of 128 cases), so eager pruning there would abort a correct run. Zero-valued
+  rules are harmless in the list: `reduce()` selects by `has()` and never sees them once the
+  assertion above has passed. Classification: **structurally required** deviation.
+- **Item 3, the aliasing guard — done by the prompt on 2026-09-04** (`c88776f`).
+
+The prompt is therefore *Complete*, not *Blocked*. Its commit template for the "invariant holds"
+branch was not used verbatim, because the work landed in three commits over two days (`c88776f`,
+`5e2b208`, and the assertion commit recorded in `IMPLEMENTATION_STATE.md`); the template's bullet
+about `remove_Rayleigh_trivial` pruning is the one that would have been wrong.
+

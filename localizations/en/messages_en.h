@@ -65,6 +65,7 @@ constexpr auto ERROR_SUBSTITUTION_RULE_ALREADY_EXISTS = "Redefinition of existin
 constexpr auto ERROR_KERNEL_INITIAL_VALUES_DISAGREE = "Internal error: operator += applied to kernels whose initial values disagree";
 
 constexpr auto ERROR_RAYLEIGH_MOMENTUM_IS_ZERO = "Internal error: Rayleigh momentum is zero";
+constexpr auto ERROR_RAYLEIGH_ZERO_LABEL_SURVIVES = "Internal error: a Rayleigh momentum with value zero is still referenced after conversion of the kernel to scalar form; its coefficient should have vanished identically";
 
 constexpr auto ERROR_EXPONENT_OF_INDEXED_POWER_IS_NOT_NUMERIC = "Exponent in power of indexed object is not numeric";
 constexpr auto ERROR_EXPONENT_OF_INDEXED_POWER_IS_NOT_INTEGER = "Exponent in power of indexed object is not an integer";

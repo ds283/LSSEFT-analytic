@@ -473,6 +473,25 @@ one_loop_reduced_integral::one_loop_reduced_integral(const loop_integral& i_, se
     // suitable for term-by-term decomposition into a sum of products of Legendre polynomials
     K = dot_products_to_cos(K).expand();
 
+    // Invariant for zero-valued Rayleigh rules (validation/RAYLEIGH-ZERO-FINDINGS.md, section 8).
+    // A rule whose value collapsed to zero under a Wick relabelling (a P13-type self-contraction,
+    // F3(L, -L, k)) always multiplies a term that is identically zero, because numerators are written
+    // in the underlying momenta while only denominators carry the label. That coefficient is not
+    // manifestly zero in the indexed representation of K -- its vanishing needs (L.i)^2 (L.j)^(-2) = 1,
+    // which GiNaC's indexed algebra does not perform -- so this is the first point at which the
+    // invariant can be checked: dot_products_to_cos() has just rewritten every (L.i)^2 as a scalar and
+    // expand() has cancelled the terms. Checking it any earlier fires spuriously (92 times per run on
+    // the current basis). Do not "fix" a failure here by substituting the label with zero: the label
+    // carries a negative power, and GiNaC would throw power::eval(): division by zero.
+    for(const auto& rule : this->Rayleigh_momenta)
+      {
+        if(!static_cast<bool>(rule.second == 0)) continue;
+
+        const auto& sym = GiNaC::ex_to<GiNaC::symbol>(rule.first);
+        if(K.has(sym) || this->WickProduct.has(sym))
+          throw exception(ERROR_RAYLEIGH_ZERO_LABEL_SURVIVES, exception_code::Rayleigh_error);
+      }
+
     if(loop_int.get_loop_order() == 1)
       {
         // cache loop momentum

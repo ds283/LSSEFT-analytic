@@ -409,7 +409,10 @@ study proposed. The 2026-09-04 diagnosis tested it before the third property had
 
 - **An assertion is safe at one place**: in the `one_loop_reduced_integral` constructor, after
   `K = dot_products_to_cos(K).expand()`, assert that no rule with value `0` has its label in `K` or
-  in the Wick product. Placed anywhere earlier it fires spuriously (92 times).
+  in the Wick product. Placed anywhere earlier it fires spuriously (92 times). *Implemented
+  2026-09-05* as `ERROR_RAYLEIGH_ZERO_LABEL_SURVIVES`; the emitted tree is byte-identical with and
+  without it, and a temporary copy of the check placed before the cosine conversion aborted the run
+  on the first `P13` record, confirming that it fires when violated.
 - **The eager-pruning proposal must not be implemented as a substitution.** `remove_Rayleigh_trivial`
   works by returning a substitution map that is applied to `K`. Extending it to zero-valued rules
   would substitute `label -> 0` into `pow(indexed(label, i), -2)`, and GiNaC then throws

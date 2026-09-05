@@ -144,7 +144,9 @@ assume the branch can be copied wholesale.
 ### 2.4 Repeated but not independently verified here
 
 - §3.2(h) branch-hit counts (776 fall-through before, 678 `t1_simple` after). **[unverified]**
-- §3.2(g) "128 hits" for the zero-valued Rayleigh condition. **[unverified]**
+- §3.2(g) "128 hits" for the zero-valued Rayleigh condition. **[unverified]** *(Verified by
+  prompt 06: exactly 128. The study's reading of the condition as a latent defect was wrong; see
+  `validation/RAYLEIGH-ZERO-FINDINGS.md` §8, 2026-09-05.)*
 - §3.3 instrumented completeness results (max μ = 8, no odd μ, 29 bias monomials). **[unverified]**
 - §4.2 the 26× cost of `--auto-symmetrize` and the agreement of the two counterterm maps.
   **[unverified]** (a 19-minute run; deliberately not repeated during planning).
