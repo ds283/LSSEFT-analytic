@@ -234,7 +234,10 @@ scope boundary. **The port should treat all of them as real work items, not sett
   (`ERROR_MULTIPLE_RAYLEIGH_MOMENTA_NOT_IMPLEMENTED` — structural for the two-point function, a
   genuine barrier for `B222`-type bispectrum terms), new correlator containers. Study §7.1 Tier 3 as
   revised 2026-09-05 — **the study's original "four-Bessel integral" claim for this tier was
-  withdrawn**; §4 above explains why only `FabJ(0,n,n)` is ever produced regardless of tier.
+  withdrawn**; §4 above explains why every term the one-Rayleigh reducer *accepts* yields
+  `FabJ(0,n,n)`. A term with two simultaneous Rayleigh momenta is refused at
+  `lib/one_loop_reduced_integral.cpp:556`, not reduced: `B222`-type and higher-loop topologies
+  need a fresh derivation or the invariant numerical route, and this family says nothing about them.
 - **No `Bk` placeholder anywhere** in the symbolic core; `enumerate_contractions` rejects an odd
   field count outright. Study §7.1 "Blocks of three".
 - **Two recovery branches in `evaluate_Wick_contractions`** (for a contraction with one unassigned
@@ -274,8 +277,8 @@ numerator in the real momenta) is the single fact everything else in this sectio
 **The reduction's integration order is forced, and this is why only `FabJ(0,n,n)` arises.**
 Rayleigh direction is integrated first (only the ℓ = 0 mode survives), plane-wave direction second,
 loop direction last. A port must either keep this order or re-derive the reduction from scratch —
-changing it is not a safe refactor. This is why §4's `FabJ(0,n,n)` claim holds unconditionally, not
-just empirically on the current operator basis.
+changing it is not a safe refactor. This is why §4's `FabJ(0,n,n)` claim holds for every term the
+one-Rayleigh reducer accepts, whatever the operator basis, not just empirically on the current one.
 
 **Zero-valued Rayleigh rules are the normal, safe signature of a `P13`-type self-contraction —
 not a defect, and the campaign spent real effort getting to this understanding.** Every canonical run
